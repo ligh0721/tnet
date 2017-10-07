@@ -1,4 +1,4 @@
-package tutils
+package netutils
 
 import (
 	"log"
