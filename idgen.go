@@ -1,4 +1,4 @@
-package netutils
+package tnet
 
 // +---------------+----------------+----------------+
 // |timestamp(ms)42  | worker id(10) | sequence(12)	 |

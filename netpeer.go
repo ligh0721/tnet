@@ -1,4 +1,4 @@
-package netutils
+package tnet
 
 import (
 	"log"
