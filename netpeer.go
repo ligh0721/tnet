@@ -33,13 +33,16 @@ type TcpServer struct {
 	// ok: 如果为 false 该连接将会关闭
 	// ReadSize: conn 希望连接读取的字节数，如果设置为0，则不会提供一个 self.connReadHandler 例程来读取数据，也就是说可以在 OnAcceptConnCallback 中自定义处理例程
 	// connExt: 为 conn 扩展的字段，将会传递到 TCPConnEx 结构中
+	// .OnAcceptConnCallback = func(self *tnet.TcpServer, conn *net.TCPConn, connId uint32) (ok bool, readSize int, connExt interface{}) {}
 	OnAcceptConnCallback func(self *TcpServer, conn *net.TCPConn, connId uint32) (ok bool, readSize int, connExt interface{})
 
 	// 连接收到数据后调用，len(data) <= conn.ReadSize，可以在回调中重新设置 conn.ReadSize 来调整下一次期望收到数据的长度
 	// 返回值 ok 为 false 将清理并关闭该连接
+	// .OnHandleConnDataCallback = func(self *tnet.TcpServer, conn *tnet.TCPConnEx, connId uint32, data []byte) (ok bool) {}
 	OnHandleConnDataCallback func(self *TcpServer, conn *TCPConnEx, connId uint32, data []byte) (ok bool)
 
 	// 关闭连接时调用
+	// .OnCloseConnCallback = func(self *tnet.TcpServer, conn *tnet.TCPConnEx, connId uint32)
 	OnCloseConnCallback func(self *TcpServer, conn *TCPConnEx, connId uint32)
 }
 
@@ -156,13 +159,16 @@ type TcpClient struct {
 	// ok: 如果为 false 该连接将会关闭
 	// ReadSize: conn 希望连接读取的字节数
 	// connExt: 为 conn 扩展的字段，将会传递到 TCPConnEx 结构中
+	// .OnDialCallback = func(self *tnet.TcpClient, conn *net.TCPConn) (ok bool, readSize int, connExt interface{}) {}
 	OnDialCallback func(self *TcpClient, conn *net.TCPConn) (ok bool, readSize int, connExt interface{})
 
 	// 连接收到数据后调用，len(data) <= conn.ReadSize，可以在回调中重新设置 conn.ReadSize 来调整下一次期望收到数据的长度
 	// 返回值 ok 为 false 将清理并关闭该连接
+	// .OnHandleConnDataCallback = func(self *tnet.TcpClient, conn *tnet.TCPConnEx, data []byte) (ok bool)
 	OnHandleConnDataCallback func(self *TcpClient, conn *TCPConnEx, data []byte) (ok bool)
 
 	// 关闭连接时调用
+	// .OnCloseConnCallback = func(self *tnet.TcpClient, conn *tnet.TCPConnEx)
 	OnCloseConnCallback func(self *TcpClient, conn *TCPConnEx)
 }
 
