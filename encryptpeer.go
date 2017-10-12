@@ -190,20 +190,17 @@ func (self *EncryptTunPeer) startConnHandler(conn *net.TCPConn, connId uint32) {
 	buf := make([]byte, max_tcp_read)
 	for {
 		n, err := conn.Read(buf)
-		if n <= 0 && err != nil {
+		if n > 0 {
+			// tell to (connect and )send data
+			log.Printf("send conn(%d) op: senddata", connId)
+			protodata := packData(connId, buf[:n])
+			self.peer.Write(protodata)
+		}
+
+		if err != nil {
 			log.Println(err.Error())
 			break
 		}
-		//if n <= 0 {
-		//    err = errors.New("conn is closed")
-		//    log.Println(err.Error())
-		//    break
-		//}
-
-		// tell to (connect and )send data
-		log.Printf("send conn(%d) op: senddata", connId)
-		protodata := packData(connId, buf[:n])
-		self.peer.Write(protodata)
 	}
 
 	log.Printf("stop conn(%d) handler", connId)
@@ -313,69 +310,63 @@ func (self *EncryptTunPeer) startPeerHandler() {
 		log.Println("@@@@@ peer read")
 		n, err := self.peer.Read(buf[:sldeleft])
 		log.Println("##### peer read finished")
-		if n <= 0 && err != nil {
-			log.Println(err.Error())
-			// close all connection
-			self.clean()
-			break
-		}
-
-		//if n <= 0 {
-		//    err = errors.New("remote peer closed")
-		//    log.Println(err.Error())
-		//    // close all connection
-		//    self.clean()
-		//    break
-		//}
-
-		sldeleft, err = slde.Write(buf[:n])
-		if err != nil {
-			log.Println(err.Error())
-			// close all connection
-			self.clean()
-			break
-		}
-
-		if sldeleft == 0 {
-			// 一个协议包接收完成，根据connId将slde加入对应的待处理队列
-			recvdata, err := slde.Decode()
+		if n > 0 {
+			sldeleft, err = slde.Write(buf[:n])
 			if err != nil {
 				log.Println(err.Error())
 				// close all connection
 				self.clean()
 				break
 			}
-			slde = NewSlde()
-			sldeleft = SLDE_HEADER_SIZE
-			log.Println("slde recv complete")
 
-			select {
-			case connId, ok := <-self.connCloseNotifyChan:
-				if ok {
-					if v, ok := self.connChanMap.Load(connId); ok {
-						connChan := v.(chan connChanItem)
-						log.Printf("close conn(%d) chan", connId)
-						self.connChanMap.Delete(connId)
-						close(connChan)
-					}
+			if sldeleft == 0 {
+				// 一个协议包接收完成，根据connId将slde加入对应的待处理队列
+				recvdata, err := slde.Decode()
+				if err != nil {
+					log.Println(err.Error())
+					// close all connection
+					self.clean()
+					break
 				}
-			default:
-			}
+				slde = NewSlde()
+				sldeleft = SLDE_HEADER_SIZE
+				log.Println("slde recv complete")
 
-			cmd, recvReader := unpackCmd(recvdata)
-			switch cmd {
-			case cmd_connect:
-				log.Println("dispatch cmd: connect")
-				self.dispatchPeerConnOp(cmd, recvReader)
-			case cmd_data:
-				log.Println("dispatch cmd: senddata")
-				self.dispatchPeerConnOp(cmd, recvReader)
-			case cmd_close:
-				log.Println("dispatch cmd: close")
-				self.dispatchPeerConnOp(cmd, recvReader)
+				select {
+				case connId, ok := <-self.connCloseNotifyChan:
+					if ok {
+						if v, ok := self.connChanMap.Load(connId); ok {
+							connChan := v.(chan connChanItem)
+							log.Printf("close conn(%d) chan", connId)
+							self.connChanMap.Delete(connId)
+							close(connChan)
+						}
+					}
+				default:
+				}
+
+				cmd, recvReader := unpackCmd(recvdata)
+				switch cmd {
+				case cmd_connect:
+					log.Println("dispatch cmd: connect")
+					self.dispatchPeerConnOp(cmd, recvReader)
+				case cmd_data:
+					log.Println("dispatch cmd: senddata")
+					self.dispatchPeerConnOp(cmd, recvReader)
+				case cmd_close:
+					log.Println("dispatch cmd: close")
+					self.dispatchPeerConnOp(cmd, recvReader)
+				}
+			} else if sldeleft > max_tcp_read {
+				sldeleft = max_tcp_read
 			}
-		} else if sldeleft > max_tcp_read {
-			sldeleft = max_tcp_read
+		}
+
+		if err != nil {
+			log.Println(err.Error())
+			// close all connection
+			self.clean()
+			break
 		}
 	}
 

@@ -70,13 +70,15 @@ func (self *TcpServer) connReadHandler(conn *TCPConnEx, connId uint32) {
 	buf := make([]byte, self.ReadBufSize)
 	for {
 		n, err := conn.Read(buf[:conn.ReadSize])
-		if n <= 0 && err != nil {
-			log.Printf("conn(%d), %s", connId, err.Error())
-			break
+		if n > 0 {
+			data := buf[:n]
+			if self.OnHandleConnDataCallback != nil && !self.OnHandleConnDataCallback(self, conn, connId, data) {
+				break
+			}
 		}
 
-		data := buf[:n]
-		if self.OnHandleConnDataCallback != nil && !self.OnHandleConnDataCallback(self, conn, connId, data) {
+		if err != nil {
+			log.Printf("conn(%d), %s", connId, err.Error())
 			break
 		}
 	}
@@ -194,13 +196,15 @@ func (self *TcpClient) connReadHandler(conn *TCPConnEx) {
 	buf := make([]byte, self.ReadBufSize)
 	for {
 		n, err := conn.Read(buf[:conn.ReadSize])
-		if n <= 0 && err != nil {
-			log.Printf("%s", err.Error())
-			break
+		if n > 0 {
+			data := buf[:n]
+			if self.OnHandleConnDataCallback != nil && !self.OnHandleConnDataCallback(self, conn, data) {
+				break
+			}
 		}
 
-		data := buf[:n]
-		if self.OnHandleConnDataCallback != nil && !self.OnHandleConnDataCallback(self, conn, data) {
+		if err != nil {
+			log.Printf("%s", err.Error())
 			break
 		}
 	}
