@@ -23,8 +23,7 @@ type TcpServer struct {
 	ConnMap     *sync.Map
 	connWg      sync.WaitGroup
 	ReadBufSize int
-
-	Ext interface{}
+	Ext         interface{}
 
 	// Listener 监听成功后调用，如果返回 err != nil 则服务器会退出
 	// func(self *tnet.TcpServer) (err error) {}

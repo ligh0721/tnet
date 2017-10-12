@@ -105,7 +105,7 @@ func (self *Slde) Write(data []byte) (left int, err error) {
 
 func (self *Slde) Decode() (ret []byte, err error) {
 	if self.length < 0 || self.writebuf.Len() != self.length+1 {
-		return nil, errors.New(fmt.Sprintf("data format err, length field(%d), real data field length(%d)", self.length, self.writebuf.Len()-1))
+		return nil, errors.New(fmt.Sprintf("data format err, length field(%d), real data field length(%d), raw data: [% x]", self.length, self.writebuf.Len()-1, self.writebuf.Bytes()))
 	}
 
 	ret = self.writebuf.Bytes()[:self.length]
