@@ -190,7 +190,7 @@ func (self *EncryptTunPeer) startConnHandler(conn *net.TCPConn, connId uint32) {
 	buf := make([]byte, max_tcp_read)
 	for {
 		n, err := conn.Read(buf)
-		if err != nil {
+		if n <= 0 && err != nil {
 			log.Println(err.Error())
 			break
 		}
@@ -313,7 +313,7 @@ func (self *EncryptTunPeer) startPeerHandler() {
 		log.Println("@@@@@ peer read")
 		n, err := self.peer.Read(buf[:sldeleft])
 		log.Println("##### peer read finished")
-		if err != nil {
+		if n <= 0 && err != nil {
 			log.Println(err.Error())
 			// close all connection
 			self.clean()

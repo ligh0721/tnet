@@ -71,7 +71,7 @@ func (self *TcpServer) connReadHandler(conn *TCPConnEx, connId uint32) {
 	buf := make([]byte, self.ReadBufSize)
 	for {
 		n, err := conn.Read(buf[:conn.ReadSize])
-		if err != nil {
+		if n <= 0 && err != nil {
 			log.Printf("conn(%d), %s", connId, err.Error())
 			break
 		}
@@ -195,7 +195,7 @@ func (self *TcpClient) connReadHandler(conn *TCPConnEx) {
 	buf := make([]byte, self.ReadBufSize)
 	for {
 		n, err := conn.Read(buf[:conn.ReadSize])
-		if err != nil {
+		if n <= 0 && err != nil {
 			log.Printf("%s", err.Error())
 			break
 		}
