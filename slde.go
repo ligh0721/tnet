@@ -113,6 +113,14 @@ func (self *Slde) Decode() (ret []byte, err error) {
 	return ret, err
 }
 
+func (self *Slde) DecodeAndReset() (ret []byte, err error) {
+	ret, err = self.Decode()
+	if err == nil {
+		self.Reset()
+	}
+	return ret, err
+}
+
 func (self *Slde) Encode(data []byte) (ret []byte, err error) {
 	data = encrypt(data)
 	self.length = len(data)
@@ -139,6 +147,9 @@ func (self *Slde) Bytes() (ret []byte) {
 func (self *Slde) Reset() {
 	self.writebuf.Reset()
 	self.length = -1
+
+	// TODO: reset custom fields
+	self.rid = 0
 }
 
 func NewSlde() (obj *Slde) {

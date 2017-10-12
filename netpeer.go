@@ -13,8 +13,12 @@ const (
 
 type TCPConnEx struct {
 	net.TCPConn
-	ReadSize int
+	readSize int
 	Ext      interface{}
+}
+
+func (self *TCPConnEx) SetReadSize(readSize int) {
+	self.readSize = readSize
 }
 
 type TcpServer struct {
@@ -31,11 +35,11 @@ type TcpServer struct {
 
 	// 有新连接接入后调用，返回值意义如下：
 	// ok: 如果为 false 该连接将会关闭
-	// ReadSize: conn 希望连接读取的字节数，如果设置为0，则不会提供一个 self.connReadHandler 例程来读取数据，也就是说可以在 OnAcceptConnCallback 中自定义处理例程
+	// readSize: conn 希望连接读取的字节数，如果设置为0，则不会提供一个 self.connReadHandler 例程来读取数据，也就是说可以在 OnAcceptConnCallback 中自定义处理例程
 	// connExt: 为 conn 扩展的字段，将会传递到 TCPConnEx 结构中
 	OnAcceptConnCallback func(self *TcpServer, conn *net.TCPConn, connId uint32) (ok bool, readSize int, connExt interface{})
 
-	// 连接收到数据后调用，len(data) <= conn.ReadSize，可以在回调中重新设置 conn.ReadSize 来调整下一次期望收到数据的长度
+	// 连接收到数据后调用，len(data) <= conn.readSize，可以在回调中重新设置 conn.readSize 来调整下一次期望收到数据的长度
 	// 返回值 ok 为 false 将清理并关闭该连接
 	OnHandleConnDataCallback func(self *TcpServer, conn *TCPConnEx, connId uint32, data []byte) (ok bool)
 
@@ -66,7 +70,7 @@ func (self *TcpServer) connReadHandler(conn *TCPConnEx, connId uint32) {
 
 	buf := make([]byte, self.ReadBufSize)
 	for {
-		n, err := conn.Read(buf[:conn.ReadSize])
+		n, err := conn.Read(buf[:conn.readSize])
 		if err != nil {
 			log.Printf("conn(%d), %s", connId, err.Error())
 			break
@@ -154,11 +158,11 @@ type TcpClient struct {
 
 	// 连接成功后调用，返回值意义如下
 	// ok: 如果为 false 该连接将会关闭
-	// ReadSize: conn 希望连接读取的字节数
+	// readSize: conn 希望连接读取的字节数
 	// connExt: 为 conn 扩展的字段，将会传递到 TCPConnEx 结构中
 	OnDialCallback func(self *TcpClient, conn *net.TCPConn) (ok bool, readSize int, connExt interface{})
 
-	// 连接收到数据后调用，len(data) <= conn.ReadSize，可以在回调中重新设置 conn.ReadSize 来调整下一次期望收到数据的长度
+	// 连接收到数据后调用，len(data) <= conn.readSize，可以在回调中重新设置 conn.readSize 来调整下一次期望收到数据的长度
 	// 返回值 ok 为 false 将清理并关闭该连接
 	OnHandleConnDataCallback func(self *TcpClient, conn *TCPConnEx, data []byte) (ok bool)
 
@@ -187,7 +191,7 @@ func (self *TcpClient) connReadHandler(conn *TCPConnEx) {
 	log.Println("start conn handler")
 	buf := make([]byte, self.ReadBufSize)
 	for {
-		n, err := conn.Read(buf[:conn.ReadSize])
+		n, err := conn.Read(buf[:conn.readSize])
 		if err != nil {
 			log.Printf("%s", err.Error())
 			break
