@@ -120,9 +120,9 @@ func (self *TcpServer) Start() (err error) {
 			log.Println(err.Error())
 			return err
 		}
-		log.Printf("new conn(%d) from %s", connId, conn.RemoteAddr().String())
 
 		connId++
+		log.Printf("new conn(%d) from %s", connId, conn.RemoteAddr().String())
 		if self.OnAcceptConnCallback != nil {
 			if ok, readSize, ext := self.OnAcceptConnCallback(self, conn, connId); ok {
 				connx := &TCPConnEx{*conn, readSize, ext}
