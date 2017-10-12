@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math/rand"
 	"time"
 )
@@ -78,7 +77,7 @@ func (self *Slde) Write(data []byte) (left int, err error) {
 
 		// TODO: add custom field
 		binary.Read(self.writebuf, binary.BigEndian, &self.rid)
-		log.Printf("decode slde.rid: %04X", self.rid)
+		//log.Printf("decode slde.rid: %04X", self.rid)
 
 		var length int32
 		binary.Read(self.writebuf, binary.BigEndian, &length)
@@ -131,7 +130,7 @@ func (self *Slde) Encode(data []byte) (ret []byte, err error) {
 	// TODO: add custom fields
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	self.rid = rnd.Uint32()
-	log.Printf("encode slde.rid: %04X", self.rid)
+	//log.Printf("encode slde.rid: %04X", self.rid)
 	binary.Write(self.writebuf, binary.BigEndian, self.rid)
 
 	binary.Write(self.writebuf, binary.BigEndian, int32(self.length))
