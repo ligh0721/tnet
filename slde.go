@@ -2,11 +2,9 @@ package tnet
 
 import (
 	"bytes"
-	"compress/zlib"
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"time"
 )
@@ -27,36 +25,6 @@ type Slde struct {
 
 	// custom fields
 	rid uint32
-}
-
-func xorEncrypt(data []byte, seed int64) (ret []byte) {
-	ret = make([]byte, len(data))
-	rnd := rand.New(rand.NewSource(seed))
-	for i, v := range data {
-		ret[i] = v ^ byte(rnd.Intn(256))
-	}
-	return ret
-}
-
-func encrypt(data []byte) (ret []byte) {
-	var b bytes.Buffer
-	w := zlib.NewWriter(&b)
-	w.Write(data)
-	w.Close()
-	ret = xorEncrypt(b.Bytes(), xor_encrypt_seed)
-	return ret
-}
-
-func decrypt(data []byte) (ret []byte, err error) {
-	data = xorEncrypt(data, xor_encrypt_seed)
-	b := bytes.NewBuffer(data)
-	r, err := zlib.NewReader(b)
-	if err != nil {
-		return nil, err
-	}
-	ret, err = ioutil.ReadAll(r)
-	r.Close()
-	return ret, nil
 }
 
 func (self *Slde) Write(data []byte) (left int, err error) {
@@ -108,7 +76,7 @@ func (self *Slde) Decode() (ret []byte, err error) {
 	}
 
 	ret = self.writebuf.Bytes()[:self.length]
-	ret, err = decrypt(ret)
+	ret, err = zlibXorDecrypt(ret, xor_encrypt_seed)
 	return ret, err
 }
 
@@ -121,7 +89,7 @@ func (self *Slde) DecodeAndReset() (ret []byte, err error) {
 }
 
 func (self *Slde) Encode(data []byte) (ret []byte, err error) {
-	data = encrypt(data)
+	data = zlibXorEncrypt(data, xor_encrypt_seed)
 	self.length = len(data)
 	//log.Println("encode slde.length:", self.length)
 	self.writebuf.Reset()
