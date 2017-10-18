@@ -69,7 +69,7 @@ func (self *TcpServer) connReadHandler(conn *TCPConnEx, connId uint32) {
 
 	buf := make([]byte, self.ReadBufSize)
 	for {
-		n, err := conn.Read(buf[:conn.ReadSize])
+		n, err0 := conn.Read(buf[:conn.ReadSize])
 		if n > 0 {
 			data := buf[:n]
 			if self.OnHandleConnDataCallback != nil && !self.OnHandleConnDataCallback(self, conn, connId, data) {
@@ -78,8 +78,8 @@ func (self *TcpServer) connReadHandler(conn *TCPConnEx, connId uint32) {
 			}
 		}
 
-		if err != nil {
-			log.Printf("TCP conn(%d), %s", connId, err.Error())
+		if err0 != nil {
+			log.Printf("TCP conn(%d), %s", connId, err0.Error())
 			break
 		}
 	}
@@ -196,7 +196,7 @@ func (self *TcpClient) connReadHandler(conn *TCPConnEx) {
 	log.Println("start TCP conn handler")
 	buf := make([]byte, self.ReadBufSize)
 	for {
-		n, err := conn.Read(buf[:conn.ReadSize])
+		n, err0 := conn.Read(buf[:conn.ReadSize])
 		if n > 0 {
 			data := buf[:n]
 			if self.OnHandleConnDataCallback != nil && !self.OnHandleConnDataCallback(self, conn, data) {
@@ -205,8 +205,8 @@ func (self *TcpClient) connReadHandler(conn *TCPConnEx) {
 			}
 		}
 
-		if err != nil {
-			log.Printf("%s", err.Error())
+		if err0 != nil {
+			log.Printf("%s", err0.Error())
 			break
 		}
 	}
@@ -325,7 +325,7 @@ func (self *UdpPeer) connReadHandler(conn *net.UDPConn) {
 
 	log.Println("start UDP conn handler")
 	buf := make([]byte, self.ReadBufSize)
-	var err error
+	var err0 error
 	var n int
 	var addr *net.UDPAddr
 	if self.mode == udp_peer_mode_client {
@@ -334,9 +334,9 @@ func (self *UdpPeer) connReadHandler(conn *net.UDPConn) {
 	}
 	for {
 		if self.mode == udp_peer_mode_client {
-			n, err = conn.Read(buf)
+			n, err0 = conn.Read(buf)
 		} else {
-			n, addr, err = conn.ReadFromUDP(buf)
+			n, addr, err0 = conn.ReadFromUDP(buf)
 		}
 
 		if n > 0 {
@@ -347,8 +347,8 @@ func (self *UdpPeer) connReadHandler(conn *net.UDPConn) {
 			}
 		}
 
-		if err != nil {
-			log.Printf("%s", err.Error())
+		if err0 != nil {
+			log.Printf("%s", err0.Error())
 			break
 		}
 	}

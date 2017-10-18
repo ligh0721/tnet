@@ -189,7 +189,7 @@ func (self *EncryptTunPeer) startConnHandler(conn *net.TCPConn, connId uint32) {
 	log.Printf("start conn(%d) handler", connId)
 	buf := make([]byte, max_tcp_read)
 	for {
-		n, err := conn.Read(buf)
+		n, err0 := conn.Read(buf)
 		if n > 0 {
 			// tell to (connect and )send data
 			log.Printf("send conn(%d) op: senddata", connId)
@@ -197,8 +197,8 @@ func (self *EncryptTunPeer) startConnHandler(conn *net.TCPConn, connId uint32) {
 			self.peer.Write(protodata)
 		}
 
-		if err != nil {
-			log.Println(err.Error())
+		if err0 != nil {
+			log.Println(err0.Error())
 			break
 		}
 	}
@@ -305,10 +305,11 @@ func (self *EncryptTunPeer) startPeerHandler() {
 	buf := make([]byte, max_tcp_read)
 	slde := NewSlde()
 	sldeleft := SLDE_HEADER_SIZE
+	var err error
 	for {
 		//log.Printf("peer will read %d bytes", sldeleft)
 		log.Println("@@@@@ peer read")
-		n, err := self.peer.Read(buf[:sldeleft])
+		n, err0 := self.peer.Read(buf[:sldeleft])
 		log.Println("##### peer read finished")
 		if n > 0 {
 			sldeleft, err = slde.Write(buf[:n])
@@ -362,8 +363,8 @@ func (self *EncryptTunPeer) startPeerHandler() {
 			}
 		}
 
-		if err != nil {
-			log.Println(err.Error())
+		if err0 != nil {
+			log.Println(err0.Error())
 			// close all connection
 			self.clean()
 			break
