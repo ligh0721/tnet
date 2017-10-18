@@ -14,9 +14,9 @@ type Codec interface {
 
 func xorEncrypt(data []byte, seed int64) (ret []byte) {
     ret = make([]byte, len(data))
-    rand.New(rand.NewSource(seed)).Read(ret)
+    rnd := rand.New(rand.NewSource(seed))
     for i, v := range data {
-        ret[i] ^= v
+        ret[i] = v ^ byte(rnd.Intn(256))
     }
     return ret
 }
