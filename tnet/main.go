@@ -267,6 +267,8 @@ func main() {
 	case "proxy":
 		clt := tnet.NewTcpClient()
 		clt.Addr = os.Args[2]
+		clt.RetryDelay = 1e9
+		clt.MaxRetry = -1
 		clt.OnDialCallback = func(self *tnet.TcpClient, conn *net.TCPConn) (ok bool, readSize int, connExt interface{}) {
 			proxy := tnet.NewEncryptConnProxy(conn, os.Args[3])
 			proxy.Start()
