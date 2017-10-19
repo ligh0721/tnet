@@ -1,1 +1,1 @@
-tnet.exe proxy tvps.tutils.com:56080 0.0.0.0:56080
+tnet.exe proxy tvps.tutils.com:53129 0.0.0.0:56080

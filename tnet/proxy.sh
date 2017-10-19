@@ -1,2 +1,2 @@
 #!/bin/sh
-./tnet proxy tvps.tutils.com:56080 localhost:56080
+./tnet proxy tvps.tutils.com:53129 localhost:56080
