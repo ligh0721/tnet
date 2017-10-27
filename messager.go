@@ -77,7 +77,8 @@ func StartMessagerServer(addr string) (obj *MessageServer, err error) {
 	}
 	obj.db = db
 	obj.idWorker, _ = NewIdWorker(0)
-	http.HandleFunc("/", obj.messageHandler)
-	http.ListenAndServe(addr, nil)
+	sv := http.NewServeMux()
+	sv.HandleFunc("/", obj.messageHandler)
+	http.ListenAndServe(addr, sv)
 	return obj, nil
 }
