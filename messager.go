@@ -3,13 +3,11 @@ package tnet
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"io/ioutil"
 	"net/http"
 	"time"
 	"strconv"
-	"errors"
 	"log"
 )
 
