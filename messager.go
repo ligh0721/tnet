@@ -8,6 +8,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"time"
+	"strconv"
+	"errors"
+	"log"
 )
 
 type MessageServer struct {
@@ -16,9 +19,24 @@ type MessageServer struct {
 }
 
 type MessageProto struct {
+	Ver  int
 	App  string
 	Key  string
 	Data interface{}
+}
+
+type RspProto struct {
+	Ver  int
+	Code int
+	Msg  string
+	Data interface{}
+}
+
+type EmptyRspData struct {
+}
+
+type MessageRspProto struct {
+	Id string
 }
 
 func (self *MessageServer) messageHandler(w http.ResponseWriter, r *http.Request) {
@@ -26,46 +44,72 @@ func (self *MessageServer) messageHandler(w http.ResponseWriter, r *http.Request
 	var payload *MessageProto
 	err := json.Unmarshal(raw, &payload)
 	if err != nil {
-		println(err.Error())
-		w.Write([]byte(err.Error()))
+		log.Printf(err.Error())
+		ResponseError(w, 1, 1, err.Error())
 		return
 	}
 
 	stmt, err := self.db.Prepare("INSERT `message` (`id`, `time`, `app`, `key`, `data`) VALUES (?, ?, ?, ?, ?)")
 	if err != nil {
-		println(err.Error())
-		w.Write([]byte(err.Error()))
+		log.Printf(err.Error())
+		ResponseError(w, 1, 2, err.Error())
 		return
 	}
 
 	id, ts, err := self.idWorker.NextId()
 	if err != nil {
-		println(err.Error())
-		w.Write([]byte(err.Error()))
+		log.Printf(err.Error())
+		ResponseError(w, 1, 3, err.Error())
 		return
 	}
 	tm := time.Unix(ts/1000, 0).Format("2006-01-02 15:04:05")
 	jsStr, err := json.Marshal(payload.Data)
 	if err != nil {
-		println(err.Error())
-		w.Write([]byte(err.Error()))
+		log.Printf(err.Error())
+		ResponseError(w, 1, 4, err.Error())
 		return
 	}
 
-	res, err := stmt.Exec(id, tm, payload.App, payload.Key, string(jsStr))
+	_, err = stmt.Exec(id, tm, payload.App, payload.Key, string(jsStr))
 	if err != nil {
-		println(err.Error())
-		w.Write([]byte(err.Error()))
+		log.Printf(err.Error())
+		ResponseError(w, 1, 5, err.Error())
 		return
 	}
 
-	id, err = res.LastInsertId()
+	idStr := strconv.FormatInt(id, 10)
+	rspData := MessageRspProto{idStr}
+	ResponseData(w, 1, rspData)
+}
+
+func ResponseError(w http.ResponseWriter, ver int, errcode int, errmsg string) {
+	rsp := RspProto{
+		ver,
+		errcode,
+		errmsg,
+		EmptyRspData{},
+	}
+	jsStr, err := json.Marshal(rsp)
 	if err != nil {
-		println(err.Error())
-		w.Write([]byte(err.Error()))
+		log.Printf(err.Error())
 		return
 	}
-	fmt.Println(id)
+	w.Write(jsStr)
+}
+
+func ResponseData(w http.ResponseWriter, ver int, data interface{}) {
+	rsp := RspProto{
+		ver,
+		0,
+		"",
+		data,
+	}
+	jsStr, err := json.Marshal(rsp)
+	if err != nil {
+		ResponseError(w, ver, -1, err.Error())
+		return
+	}
+	w.Write(jsStr)
 }
 
 func StartMessagerServer(addr string) (obj *MessageServer, err error) {
