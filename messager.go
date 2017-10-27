@@ -81,6 +81,7 @@ func (self *MessageServer) messageHandler(w http.ResponseWriter, r *http.Request
 }
 
 func ResponseError(w http.ResponseWriter, ver int, errcode int, errmsg string) {
+	w.Header().Add("content-type", "application/json; charset=utf-8")
 	rsp := RspProto{
 		ver,
 		errcode,
