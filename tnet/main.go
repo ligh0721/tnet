@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"sync"
 	"encoding/binary"
+	"time"
 )
 
 type UdpExt struct {
@@ -67,7 +68,7 @@ func parseIpPacket(data []byte) {
 }
 
 // "\x00m,1400 a,192.168.100.2,32 d,8.8.8.8 r,0.0.0.0,0"
-func startUdpTunServer () {
+func runUdpTunServer () {
 	ext := &UdpTunServerExt{
 		tnet.NewZlibXorCodec(19284562),
 		os.Args[3],
@@ -249,6 +250,38 @@ func tunTcpServer() {
 	svr.Start()
 }
 
+func runProxy() {
+	for {
+		clt := tnet.NewTcpClient()
+		clt.Addr = os.Args[2]
+		clt.RetryDelay = 1e9
+		clt.MaxRetry = -1
+		clt.OnDialCallback = func(self *tnet.TcpClient, conn *net.TCPConn) (ok bool, readSize int, connExt interface{}) {
+			proxy := tnet.NewEncryptConnProxy(conn, os.Args[3])
+			proxy.Start()
+			return false, 0, proxy
+		}
+		clt.Start()
+
+		time.Sleep(1e9)
+	}
+}
+
+func runAgent() {
+	for {
+		svr := tnet.NewTcpServer()
+		svr.Addr = os.Args[2]
+		svr.OnAcceptConnCallback = func(self *tnet.TcpServer, conn *net.TCPConn, connId uint32) (ok bool, readSize int, connExt interface{}) {
+			agent := tnet.NewEncryptConnAgent(conn, os.Args[3])
+			go agent.Start()
+			return true, 0, agent
+		}
+		svr.Start()
+
+		time.Sleep(1e9)
+	}
+}
+
 func main() {
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
 	args := os.Args
@@ -265,28 +298,13 @@ func main() {
 		test()
 
 	case "proxy":
-		clt := tnet.NewTcpClient()
-		clt.Addr = os.Args[2]
-		clt.RetryDelay = 1e9
-		clt.MaxRetry = -1
-		clt.OnDialCallback = func(self *tnet.TcpClient, conn *net.TCPConn) (ok bool, readSize int, connExt interface{}) {
-			proxy := tnet.NewEncryptConnProxy(conn, os.Args[3])
-			proxy.Start()
-			return false, 0, proxy
-		}
-		clt.Start()
+		runProxy()
 
 	case "agent":
-		svr := tnet.NewTcpServer()
-		svr.Addr = os.Args[2]
-		svr.OnAcceptConnCallback = func(self *tnet.TcpServer, conn *net.TCPConn, connId uint32) (ok bool, readSize int, connExt interface{}) {
-			agent := tnet.NewEncryptConnAgent(conn, os.Args[3])
-			go agent.Start()
-			return true, 0, agent
-		}
-		svr.Start()
+		runAgent()
 
 	case "tun":
-		startUdpTunServer()
+		// tun :2889 tun0 tutils -m 1400 -a 192.168.100.2 32 -d 8.8.8.8 -r 0.0.0.0 0
+		runUdpTunServer()
 	}
 }
