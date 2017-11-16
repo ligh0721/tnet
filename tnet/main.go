@@ -11,6 +11,9 @@ import (
 	"sync"
 	"encoding/binary"
 	"time"
+	_ "github.com/go-sql-driver/mysql"
+	"git.tutils.com/tutils/tnet/tcenter"
+	"git.tutils.com/tutils/tnet/messager"
 )
 
 type UdpExt struct {
@@ -18,10 +21,21 @@ type UdpExt struct {
 }
 
 func test() {
+	b:=bytes.NewBuffer([]byte{})
+	println(cap([]byte{}))
+	b.Grow(10)
+	b.Write([]byte("abc"))
+	println(b.Len())
+
+	p := make([]byte, 10)
+	p2 := p[1:1]
+	p2 = p2[:15]
+	p2[3] = 1
+	log.Printf("[% x] %d", p2, cap(p2))
 }
 
 type UdpTunServerExt struct {
-	codec tnet.Codec
+	codec tnet.CryptCodec
 	device string
 	secret string
 	handshaked bool
@@ -185,7 +199,7 @@ func tunTcpServer() {
 					svrExt := svr.Ext.(*SvrExt)
 					if v, ok := self.ConnMap.Load(svrExt.lastConnId); ok {
 						conn := v.(*tnet.TCPConnEx)
-						encodeddata := tnet.NewSldeWithData(buf[:n]).Bytes()
+						encodeddata, _ := tnet.EncodeToSldeDataFromBytes(buf[:n])
 						log.Printf("write to conn %d bytes", len(encodeddata))
 						conn.Write(encodeddata)
 					} else {
@@ -208,7 +222,7 @@ func tunTcpServer() {
 	}
 	svr.OnHandleConnDataCallback = func(self *tnet.TcpServer, conn *tnet.TCPConnEx, connId uint32, data []byte) (ok bool) {
 		ext := conn.Ext.(*ConnExt)
-		left, err := ext.slde.Write(data)
+		left, err := ext.slde.WriteAndGetNextToWrite(data)
 		if err != nil {
 			panic(err)
 		}
@@ -231,7 +245,8 @@ func tunTcpServer() {
 		if !ext.handshake {
 			if string(decodeddata[1:]) == "test" {
 				params := []byte("\x00m,1400 a,192.168.100.2,32 d,8.8.8.8 r,0.0.0.0,0")
-				conn.Write(tnet.NewSldeWithData(params).Bytes())
+				encodedcode, _ := tnet.EncodeToSldeDataFromBytes(params)
+				conn.Write(encodedcode)
 				log.Println("handshake succ!")
 				ext.handshake = true
 				ext = conn.Ext.(*ConnExt)
@@ -282,6 +297,18 @@ func runAgent() {
 	}
 }
 
+func runTCServer() {
+	svr := tcenter.NewTCenterServer()
+	svr.Addr = ":3888"
+	svr.Start()
+}
+
+func runTCClient() {
+	clt := tcenter.NewTCenterClient()
+	clt.Addr = "localhost:3888"
+	clt.Start()
+}
+
 func main() {
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
 	args := os.Args
@@ -292,7 +319,7 @@ func main() {
 	switch appType {
 	case "messager":
 		addr := args[2]
-		tnet.StartMessagerServer(addr)
+		messager.StartMessagerServer(addr)
 
 	case "test":
 		test()
@@ -306,5 +333,11 @@ func main() {
 	case "tun":
 		// tun :2889 tun0 tutils -m 1400 -a 192.168.100.2 32 -d 8.8.8.8 -r 0.0.0.0 0
 		runUdpTunServer()
+
+	case "tcserver":
+		runTCServer()
+
+	case "tcclient":
+		runTCClient()
 	}
 }

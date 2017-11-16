@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package tcenter;
+
+
+message HelloReq {
+    string msg = 1;
+}
+
+message HelloRsp {
+    int32 code = 1;
+    string msg = 2;
+}
+
+service TCenterService {
+    rpc hello (HelloReq) returns (HelloRsp);
+}

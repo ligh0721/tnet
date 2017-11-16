@@ -151,6 +151,15 @@ func (self *TcpServer) Start() (err error) {
 	return nil
 }
 
+func (self *TcpServer) PeekConn(connId int32) (ret *TCPConnEx) {
+	if v, ok := self.ConnMap.Load(connId); ok {
+		conn := v.(*TCPConnEx)
+		return conn
+	} else {
+		return nil
+	}
+}
+
 type TcpClient struct {
 	Addr        string
 	RetryDelay  time.Duration // >= 0

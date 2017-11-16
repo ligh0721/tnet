@@ -7,7 +7,7 @@ import (
     "math/rand"
 )
 
-type Codec interface {
+type CryptCodec interface {
     Encrypt(data []byte) (ret []byte)
     Decrypt(data []byte) (ret []byte, err error)
 }
@@ -25,7 +25,7 @@ type XorCodec struct {
     seed int64
 }
 
-func NewXorCodec(seed int64) (obj Codec) {
+func NewXorCodec(seed int64) (obj CryptCodec) {
     obj = &XorCodec{seed}
     return obj
 }
@@ -62,7 +62,7 @@ func zlibXorDecrypt(data []byte, seed int64) (ret []byte, err error) {
 type ZlibCodec struct {
 }
 
-func NewZlibCodec(seed int64) (obj Codec) {
+func NewZlibCodec(seed int64) (obj CryptCodec) {
     obj = &XorCodec{seed}
     return obj
 }
@@ -91,7 +91,7 @@ type ZlibXorCodec struct {
     XorCodec
 }
 
-func NewZlibXorCodec(seed int64) (obj Codec) {
+func NewZlibXorCodec(seed int64) (obj CryptCodec) {
     obj = &ZlibXorCodec{ZlibCodec{}, XorCodec{seed}}
     return obj
 }

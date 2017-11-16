@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
+	"io"
 )
 
 const (
@@ -20,26 +21,29 @@ const (
 )
 
 type Slde struct {
-	writebuf *bytes.Buffer
-	length   int
+	writebuf    *bytes.Buffer
+	length      int
+	nextToWrite int
 
 	// custom fields
 	rid uint32
 }
 
-func (self *Slde) Write(data []byte) (left int, err error) {
+func (self *Slde) Write(data []byte) (n int, err error) {
 	self.writebuf.Write(data)
 
 	if self.length < 0 {
 		if self.writebuf.Len() < SLDE_HEADER_SIZE {
 			// header not enough
-			return SLDE_HEADER_SIZE - self.writebuf.Len(), nil
+			self.nextToWrite = SLDE_HEADER_SIZE - self.writebuf.Len()
+			return len(data), nil
 		}
 
 		// header enough
 		var stx byte
 		binary.Read(self.writebuf, binary.BigEndian, &stx)
 		if stx != SLDE_STX {
+			self.nextToWrite = -1
 			return -1, errors.New("field stx err")
 		}
 
@@ -50,24 +54,35 @@ func (self *Slde) Write(data []byte) (left int, err error) {
 		var length int32
 		binary.Read(self.writebuf, binary.BigEndian, &length)
 		if length < 0 {
+			self.nextToWrite = -1
 			return -1, errors.New("field length err")
 		}
 		self.length = int(length)
 		//log.Println("decode slde.length:", self.length)
 	}
 
-	left = self.length + 1 - self.writebuf.Len()
-	if left > 0 {
-		return left, nil
+	self.nextToWrite = self.length + 1 - self.writebuf.Len()
+	if self.nextToWrite > 0 {
+		return len(data), nil
 	}
 
 	// write finished
 	etx := self.writebuf.Bytes()[self.length]
 	if etx != SLDE_ETX {
+		self.nextToWrite = -1
 		return -1, errors.New("field etx err")
 	}
 
-	return 0, nil
+	return len(data), nil
+}
+
+func (self *Slde) GetNextToWrite() (nextToWrite int) {
+	return self.nextToWrite
+}
+
+func (self *Slde) WriteAndGetNextToWrite(data []byte) (left int, err error) {
+	_, err = self.Write(data)
+	return self.nextToWrite, err
 }
 
 func (self *Slde) Decode() (ret []byte, err error) {
@@ -91,6 +106,7 @@ func (self *Slde) DecodeAndReset() (ret []byte, err error) {
 func (self *Slde) Encode(data []byte) (ret []byte, err error) {
 	data = zlibXorEncrypt(data, xor_encrypt_seed)
 	self.length = len(data)
+	self.nextToWrite = 0
 	//log.Println("encode slde.length:", self.length)
 	self.writebuf.Reset()
 	binary.Write(self.writebuf, binary.BigEndian, SLDE_STX)
@@ -114,21 +130,54 @@ func (self *Slde) Bytes() (ret []byte) {
 func (self *Slde) Reset() {
 	self.writebuf.Reset()
 	self.length = -1
+	self.nextToWrite = SLDE_HEADER_SIZE
 
 	// TODO: reset custom fields
 	self.rid = 0
 }
 
+func (self *Slde) encodeHeader() {
+	//self.length = len(data)
+	//log.Println("encode slde.length:", self.length)
+	self.writebuf.Reset()
+	binary.Write(self.writebuf, binary.BigEndian, SLDE_STX)
+
+	// TODO: add custom fields
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	self.rid = rnd.Uint32()
+	//log.Printf("encode slde.rid: %04X", self.rid)
+	binary.Write(self.writebuf, binary.BigEndian, self.rid)
+}
+
 func NewSlde() (obj *Slde) {
 	obj = new(Slde)
 	obj.writebuf = bytes.NewBuffer([]byte{})
+	obj.writebuf.Grow(0xffff)
 	obj.length = -1
+	obj.nextToWrite = SLDE_HEADER_SIZE
 	return obj
 }
 
-func NewSldeWithData(data []byte) (obj *Slde) {
-	obj = new(Slde)
+func EncodeToSldeDataFromBytes(data []byte) (ret []byte, err error) {
+	obj := new(Slde)
 	obj.writebuf = bytes.NewBuffer([]byte{})
-	obj.Encode(data)
-	return obj
+	obj.writebuf.Grow(SLDE_HEADER_SIZE + len(data) + 1)
+	ret, err = obj.Encode(data)
+	return ret, err
+}
+
+func DecodeToBytesFromSldeReader(r io.Reader) (ret []byte, err error) {
+	slde := NewSlde()
+	for {
+		n, err := io.CopyN(slde, r, int64(slde.GetNextToWrite()))
+		if err != nil {
+			return nil, err
+		}
+		if n > 0 {
+			if slde.GetNextToWrite() == 0 {
+				break
+			}
+		}
+	}
+	return slde.Decode()
 }

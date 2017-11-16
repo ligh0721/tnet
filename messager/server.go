@@ -1,4 +1,4 @@
-package tnet
+package messager
 
 import (
 	"database/sql"
@@ -9,11 +9,12 @@ import (
 	"time"
 	"strconv"
 	"log"
+	"git.tutils.com/tutils/tnet"
 )
 
 type MessageServer struct {
 	db       *sql.DB
-	idWorker *IdWorker
+	idWorker *tnet.IdWorker
 }
 
 type MessageProto struct {
@@ -120,7 +121,7 @@ func StartMessagerServer(addr string) (obj *MessageServer, err error) {
 		return nil, err
 	}
 	obj.db = db
-	obj.idWorker, _ = NewIdWorker(0)
+	obj.idWorker, _ = tnet.NewIdWorker(0)
 	sv := http.NewServeMux()
 	sv.HandleFunc("/", obj.messageHandler)
 	http.ListenAndServe(addr, sv)

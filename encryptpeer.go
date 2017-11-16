@@ -74,7 +74,7 @@ func packConnect(connId uint32) (ret []byte) {
 	payload := bytes.NewBuffer([]byte{})
 	binary.Write(payload, binary.BigEndian, cmd_connect)
 	binary.Write(payload, binary.BigEndian, connId)
-	ret = NewSldeWithData(payload.Bytes()).Bytes()
+	ret, _ = EncodeToSldeDataFromBytes(payload.Bytes())
 	//log.Println("pack", ret)
 	return ret
 }
@@ -87,7 +87,7 @@ func packData(connId uint32, data []byte) (ret []byte) {
 	dataLen := uint32(len(data))
 	binary.Write(payload, binary.BigEndian, dataLen)
 	binary.Write(payload, binary.BigEndian, data)
-	ret = NewSldeWithData(payload.Bytes()).Bytes()
+	ret, _ = EncodeToSldeDataFromBytes(payload.Bytes())
 	//log.Println("pack", ret)
 	return ret
 }
@@ -97,7 +97,7 @@ func packClose(connId uint32) (ret []byte) {
 	payload := bytes.NewBuffer([]byte{})
 	binary.Write(payload, binary.BigEndian, cmd_close)
 	binary.Write(payload, binary.BigEndian, connId)
-	ret = NewSldeWithData(payload.Bytes()).Bytes()
+	ret, _ = EncodeToSldeDataFromBytes(payload.Bytes())
 	//log.Println("pack", ret)
 	return ret
 }
@@ -312,7 +312,7 @@ func (self *EncryptTunPeer) startPeerHandler() {
 		n, err0 := self.peer.Read(buf[:sldeleft])
 		log.Println("##### peer read finished")
 		if n > 0 {
-			sldeleft, err = slde.Write(buf[:n])
+			sldeleft, err = slde.WriteAndGetNextToWrite(buf[:n])
 			if err != nil {
 				log.Println(err.Error())
 				// close all connection
