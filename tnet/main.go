@@ -14,6 +14,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"git.tutils.com/tutils/tnet/tcenter"
 	"git.tutils.com/tutils/tnet/messager"
+	"runtime"
 )
 
 type UdpExt struct {
@@ -21,17 +22,36 @@ type UdpExt struct {
 }
 
 func test() {
-	b:=bytes.NewBuffer([]byte{})
-	println(cap([]byte{}))
-	b.Grow(10)
-	b.Write([]byte("abc"))
-	println(b.Len())
-
-	p := make([]byte, 10)
-	p2 := p[1:1]
-	p2 = p2[:15]
-	p2[3] = 1
-	log.Printf("[% x] %d", p2, cap(p2))
+	log.Printf(runtime.GOARCH)
+	log.Printf(runtime.GOOS)
+	log.Println(os.Hostname())
+	log.Printf("[% s]", os.Environ())
+	log.Printf(os.TempDir())
+	log.Println(runtime.NumCPU())
+	itfs, _ := net.Interfaces()
+	for _, itf := range itfs {
+		log.Println(itf.Name)
+		log.Println(itf.HardwareAddr.String())
+		log.Println(itf.Flags.String())
+		log.Println(itf.MTU)
+		addrs, _ := itf.Addrs()
+		for _, addr := range addrs {
+			log.Println("  net", addr.Network())
+			log.Println("  ip", addr.String())
+		}
+		addrs, _ = itf.MulticastAddrs()
+		for _, addr := range addrs {
+			log.Println("  mnet", addr.Network())
+			log.Println("  mip", addr.String())
+		}
+	}
+	log.Println("=======")
+	addrs, _ := net.InterfaceAddrs()
+	for _, addr := range addrs {
+		log.Println("  net", addr.Network())
+		log.Println("  ip", addr.String())
+	}
+	log.Println()
 }
 
 type UdpTunServerExt struct {
@@ -299,13 +319,13 @@ func runAgent() {
 
 func runTCServer() {
 	svr := tcenter.NewTCenterServer()
-	svr.Addr = ":3888"
+	svr.Addr = os.Args[2]
 	svr.Start()
 }
 
 func runTCClient() {
 	clt := tcenter.NewTCenterClient()
-	clt.Addr = "localhost:3888"
+	clt.Addr = os.Args[2]
 	clt.Start()
 }
 

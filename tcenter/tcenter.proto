@@ -2,16 +2,53 @@ syntax = "proto3";
 
 package tcenter;
 
-
-message HelloReq {
-    string msg = 1;
+message IfInfo {
+    string name = 1;
+    string mac = 2;
+    string ip = 3;
+    string mask = 4;
 }
 
-message HelloRsp {
-    int32 code = 1;
-    string msg = 2;
+message HostInfo {
+    string os = 1;
+    string arch = 2;
+    string hostname = 3;
+    repeated IfInfo interfaces = 4;
+    repeated string envs = 5;
+    int32 numcpu = 6;
+}
+
+message LoginReq {
+    HostInfo hostInfo = 1;
+}
+
+message LoginRsp {
+    uint32 id = 1;
+}
+
+message HealthReq {
+    uint32 id = 1;
+    HostInfo hostInfo = 2;
+}
+
+message EmptyRsp {
+}
+
+message ListClientsReq {
+    uint32 id = 1;
+}
+
+message ListClientsRsp {
+    message ClientInfo {
+        HostInfo hostInfo = 1;
+        int64 lastHealth = 2;
+    }
+
+    repeated ClientInfo clientInfos = 1;
 }
 
 service TCenterService {
-    rpc hello (HelloReq) returns (HelloRsp);
+    rpc login(LoginReq) returns(LoginRsp);
+    rpc health(HealthReq) returns(EmptyRsp);
+    rpc listClients(ListClientsReq) returns(ListClientsRsp);
 }
