@@ -40,8 +40,9 @@ message ListClientsReq {
 
 message ListClientsRsp {
     message ClientInfo {
-        HostInfo hostInfo = 1;
-        int64 lastHealth = 2;
+        uint32 id = 1;
+        HostInfo hostInfo = 2;
+        int64 lastHealth = 3;
     }
 
     repeated ClientInfo clientInfos = 1;

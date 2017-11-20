@@ -8,10 +8,14 @@ import (
     "runtime"
     "net"
     "time"
+    "fmt"
 )
 
 type TCenterClient struct {
     Addr string
+    Id uint32
+    conn *grpc.ClientConn
+    clt TCenterServiceClient
 }
 
 func NewTCenterClient() (obj *TCenterClient) {
@@ -21,41 +25,16 @@ func NewTCenterClient() (obj *TCenterClient) {
 
 func (self *TCenterClient) Start() {
     // Set up a connection to the server.
-    conn, err := grpc.Dial(self.Addr, grpc.WithInsecure())
+    var err error
+    self.conn, err = grpc.Dial(self.Addr, grpc.WithInsecure())
     if err != nil {
         log.Fatalf("did not connect: %v", err)
     }
-    defer conn.Close()
-    c := NewTCenterServiceClient(conn)
+    self.clt = NewTCenterServiceClient(self.conn)
+}
 
-    loginReq := &LoginReq{}
-    loginReq.HostInfo = &HostInfo{}
-    lastInfoStr := getHostInfo(loginReq.HostInfo)
-
-    rsp, err := c.Login(context.Background(), loginReq)
-    if err != nil {
-        log.Fatalf("could not rpc login: %v", err)
-        //return
-    }
-    id := rsp.Id
-    log.Printf("rsp: client(%d)", id)
-
-    for {
-        healthReq := &HealthReq{}
-        healthReq.Id = id
-        hostInfo := &HostInfo{}
-        infoStr := getHostInfo(hostInfo)
-        if infoStr != lastInfoStr {
-            healthReq.HostInfo = hostInfo
-            log.Printf("host info updated")
-        }
-        _, err := c.Health(context.Background(), healthReq)
-        if err != nil {
-            log.Fatalf("could not rpc health: %v", err)
-            //return
-        }
-        time.Sleep(60e9)
-    }
+func (self *TCenterClient) Close() {
+    self.conn.Close()
 }
 
 func getHostInfo(info *HostInfo) (ret string) {
@@ -83,4 +62,69 @@ func getHostInfo(info *HostInfo) (ret string) {
     info.Envs = os.Environ()
     info.Numcpu = int32(runtime.NumCPU())
     return info.String()
+}
+
+func (self *TCenterClient) Login() (ret string) {
+    loginReq := &LoginReq{}
+    loginReq.HostInfo = &HostInfo{}
+    ret = getHostInfo(loginReq.HostInfo)
+
+    rsp, err := self.clt.Login(context.Background(), loginReq)
+    if err != nil {
+        log.Fatalf("could not rpc login: %v", err)
+        //return
+    }
+    self.Id = rsp.Id
+    log.Printf("rsp: client(%d)", self.Id)
+    return ret
+}
+
+func (self *TCenterClient) HealthLoop(loginInfoStr string) {
+    for {
+        healthReq := &HealthReq{}
+        healthReq.Id = self.Id
+        hostInfo := &HostInfo{}
+        infoStr := getHostInfo(hostInfo)
+        if infoStr != loginInfoStr {
+            healthReq.HostInfo = hostInfo
+            log.Printf("host info updated")
+        }
+        _, err := self.clt.Health(context.Background(), healthReq)
+        if err != nil {
+            log.Fatalf("could not rpc health: %v", err)
+            //return
+        }
+        time.Sleep(60e9)
+    }
+}
+
+func getClientInfoStr(info *HostInfo) (ret string) {
+    s := fmt.Sprintf("os: %s\narch: %s\nhostname: %s", info.Os, info.Arch)
+    if info.Interfaces != nil {
+        s = s + fmt.Sprintf("\ninterfaces(%d):\n", len(info.Interfaces))
+        for _, itf := range info.Interfaces {
+            s = s + fmt.Sprintf("  name: %s\n    mac: %s\n    ip: %s\n    mask: %s\n", itf.Name, itf.Mac, itf.Ip, itf.Mask)
+        }
+    }
+    s = s + fmt.Sprintf("envs(%d):\n", len(info.Envs))
+    for _, env := range info.Envs {
+        s = s + fmt.Sprintf("    %s\n", env)
+    }
+    s = s + fmt.Sprintf("numcpu: %d\n", info.Numcpu)
+    return s
+}
+
+func (self *TCenterClient) ListClients() {
+    listClientsReq := &ListClientsReq{}
+    listClientsReq.Id = self.Id
+    rsp, err := self.clt.ListClients(context.Background(), listClientsReq)
+    if err != nil {
+        log.Fatalf("could not rpc list clients: %v", err)
+        //return
+    }
+    s := ""
+    for _, info := range rsp.GetClientInfos() {
+        s = s + fmt.Sprintf("--------------------\nID: %d\nLAST: %s\n%s", info.Id, time.Unix(info.LastHealth, 0).Format("2006-01-02 15:04:05"), getClientInfoStr(info.HostInfo))
+    }
+    log.Printf("total %d client(s) info:\n%s", len(rsp.GetClientInfos()), s)
 }

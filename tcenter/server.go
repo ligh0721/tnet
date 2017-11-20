@@ -107,5 +107,25 @@ func (self *TCenterServer) Health(ctx context.Context, req *HealthReq) (rsp *Emp
 }
 
 func (self *TCenterServer) ListClients(ctx context.Context, req *ListClientsReq) (rsp *ListClientsRsp, err error) {
-    return nil, nil
+    id := req.Id
+    _, ok := self.clts.Load(id)
+    if !ok {
+        err = errors.New(fmt.Sprintf("invalid client(%d)", id))
+        log.Printf("%v", err)
+        return nil, err
+    }
+
+    rsp = &ListClientsRsp{}
+
+    self.clts.Range(func(key, value interface{}) bool {
+        k := key.(uint32)
+        v := value.(*TCenterClientInfo)
+        info := &ListClientsRsp_ClientInfo{}
+        info.Id = k
+        info.HostInfo = v.hostInfo
+        info.LastHealth = v.lastHealth.Unix()
+        rsp.ClientInfos = append(rsp.ClientInfos, info)
+        return true
+    })
+    return rsp, nil
 }

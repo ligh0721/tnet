@@ -327,6 +327,23 @@ func runTCClient() {
 	clt := tcenter.NewTCenterClient()
 	clt.Addr = os.Args[2]
 	clt.Start()
+	defer clt.Close()
+	lastInfoStr := clt.Login()
+	var cmd string
+	if len(os.Args) > 3 {
+		cmd = os.Args[3]
+	} else {
+		cmd = ""
+	}
+
+	switch cmd {
+	case "list":
+		clt.ListClients()
+		break
+	default:
+		clt.HealthLoop(lastInfoStr)
+		break
+	}
 }
 
 func main() {
