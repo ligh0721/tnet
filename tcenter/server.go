@@ -75,12 +75,31 @@ func printClientInfo(id uint32, info *TCenterClientInfo) {
     log.Printf("client(%d) info:\n%s", id, s)
 }
 
+func (self *TCenterServer) storeClientInfo(id uint32, info *TCenterClientInfo) {
+    now := time.Now()
+    var todel []uint32
+    self.clts.Range(func(key, value interface{}) bool {
+        k := key.(uint32)
+        v := value.(*TCenterClientInfo)
+        delta := now.Unix() - v.lastHealth.Unix()
+        if delta > 120e9 {
+            todel = append(todel, k)
+        }
+        return true
+    })
+    for _, d := range todel {
+        self.clts.Delete(d)
+    }
+    self.clts.Store(id, info)
+}
+
 func (self *TCenterServer) Login(ctx context.Context, req *LoginReq) (rsp *LoginRsp, err error) {
     id := self.nextId()
     info := &TCenterClientInfo{}
     info.hostInfo = req.HostInfo
     info.lastHealth = time.Now()
     self.clts.Store(id, info)
+    //self.storeClientInfo(id, info)
     log.Printf("client(%d) login", id)
     printClientInfo(id, info)
 
@@ -101,6 +120,7 @@ func (self *TCenterServer) Health(ctx context.Context, req *HealthReq) (rsp *Emp
     value := v.(*TCenterClientInfo)
     if req.HostInfo != nil {
         value.hostInfo = req.HostInfo
+        //self.storeClientInfo(req.Id, value)
     }
     value.lastHealth = time.Now()
     return EMPTY_RSP, nil
@@ -117,9 +137,18 @@ func (self *TCenterServer) ListClients(ctx context.Context, req *ListClientsReq)
 
     rsp = &ListClientsRsp{}
 
+    var todel []uint32
+    now := time.Now().Unix()
     self.clts.Range(func(key, value interface{}) bool {
         k := key.(uint32)
         v := value.(*TCenterClientInfo)
+
+        delta := now - v.lastHealth.Unix()
+        if delta > 120e9 {
+            todel = append(todel, k)
+            return true
+        }
+
         info := &ListClientsRsp_ClientInfo{}
         info.Id = k
         info.HostInfo = v.hostInfo
@@ -127,5 +156,10 @@ func (self *TCenterServer) ListClients(ctx context.Context, req *ListClientsReq)
         rsp.ClientInfos = append(rsp.ClientInfos, info)
         return true
     })
+
+    for _, d := range todel {
+        self.clts.Delete(d)
+    }
+
     return rsp, nil
 }
