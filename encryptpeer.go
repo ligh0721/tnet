@@ -303,6 +303,10 @@ func (self *EncryptTunPeer) dispatchPeerConnOp(cmd uint16, reader io.Reader) {
 
 // 主连接处理循环
 func (self *EncryptTunPeer) startPeerHandler() {
+	defer func() {
+		self.peer.Close()
+		log.Printf("peer is closing")
+	}()
 	log.Println("start peer handler")
 	buf := make([]byte, max_tcp_read)
 	slde := NewSlde()
