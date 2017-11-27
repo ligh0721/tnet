@@ -14,44 +14,31 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"git.tutils.com/tutils/tnet/tcenter"
 	"git.tutils.com/tutils/tnet/messager"
-	"runtime"
+	"git.tutils.com/tutils/tnet/tcounter"
 )
+
 
 type UdpExt struct {
 	first bool
 }
 
+func grow(list interface{}) {
+	switch list.(type) {
+	case *[]int:
+		l := list.(*[]int)
+		*l = (*l)[:len(*l)+1]
+	}
+}
+
 func test() {
-	log.Printf(runtime.GOARCH)
-	log.Printf(runtime.GOOS)
-	log.Println(os.Hostname())
-	log.Printf("[% s]", os.Environ())
-	log.Printf(os.TempDir())
-	log.Println(runtime.NumCPU())
-	itfs, _ := net.Interfaces()
-	for _, itf := range itfs {
-		log.Println(itf.Name)
-		log.Println(itf.HardwareAddr.String())
-		log.Println(itf.Flags.String())
-		log.Println(itf.MTU)
-		addrs, _ := itf.Addrs()
-		for _, addr := range addrs {
-			log.Println("  net", addr.Network())
-			log.Println("  ip", addr.String())
-		}
-		addrs, _ = itf.MulticastAddrs()
-		for _, addr := range addrs {
-			log.Println("  mnet", addr.Network())
-			log.Println("  mip", addr.String())
-		}
-	}
-	log.Println("=======")
-	addrs, _ := net.InterfaceAddrs()
-	for _, addr := range addrs {
-		log.Println("  net", addr.Network())
-		log.Println("  ip", addr.String())
-	}
-	log.Println()
+	a := [4]int{1}
+	arr := a[:3]
+	println(cap(arr))
+	arr = append(arr, 10)
+	println(cap(arr))
+	arr = append(arr, 10)
+	println(cap(arr))
+	log.Printf("%v", arr)
 }
 
 type UdpTunServerExt struct {
@@ -317,13 +304,13 @@ func runAgent() {
 	}
 }
 
-func runTCServer() {
+func runTCenterServer() {
 	svr := tcenter.NewTCenterServer()
 	svr.Addr = os.Args[2]
 	svr.Start()
 }
 
-func runTCClient() {
+func runTCenterClient() {
 	clt := tcenter.NewTCenterClient()
 	clt.Addr = os.Args[2]
 	clt.Start()
@@ -344,6 +331,23 @@ func runTCClient() {
 		clt.HealthLoop(lastInfoStr)
 		break
 	}
+}
+
+func runTCounterAgent() {
+	agent := tcounter.NewCounterAgent()
+	agent.Sock = "/tmp/tcountera.sock"
+	agent.Start()
+}
+
+func runTCounterClient() {
+	clt := tcounter.NewCounterClient()
+	clt.Sock = "/tmp/tcountera.sock"
+	clt.Dial()
+	for {
+		clt.SendValue(100, 10)
+		time.Sleep(0.4e9)
+	}
+	clt.Close()
 }
 
 func main() {
@@ -371,10 +375,16 @@ func main() {
 		// tun :2889 tun0 tutils -m 1400 -a 192.168.100.2 32 -d 8.8.8.8 -r 0.0.0.0 0
 		runUdpTunServer()
 
-	case "tcserver":
-		runTCServer()
+	case "tcenters":
+		runTCenterServer()
 
-	case "tcclient":
-		runTCClient()
+	case "tcenterc":
+		runTCenterClient()
+
+	case "tcountera":
+		runTCounterAgent()
+
+	case "tcounterc":
+		runTCounterClient()
 	}
 }
