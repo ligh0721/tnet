@@ -10,6 +10,8 @@ import (
     "sync"
     "google.golang.org/grpc"
     "golang.org/x/net/context"
+    _ "net/http/pprof"
+    "net/http"
 )
 
 type payload_send_value struct {
@@ -98,6 +100,10 @@ func (self *CounterAgent) parseSendValue(payload *bytes.Buffer) {
 }
 
 func (self *CounterAgent) Start() {
+    go func() {
+        http.ListenAndServe(":8102", nil)
+    }()
+
     // listen on local unix sock
     conn, err := net.ListenUnixgram("unixgram",  &net.UnixAddr{self.Sock, "unixgram"})
     if err != nil {
@@ -126,11 +132,11 @@ func (self *CounterAgent) readLoop(conn *net.UnixConn) {
         }
         self.parseCommand(buf[:n])
 
-        v := self.table[100]
-        log.Printf("\n\n=== dump:")
-        for _, e := range v.valueList {
-            log.Printf("=== %v", e)
-        }
+        //v := self.table[100]
+        //log.Printf("\n\n=== dump:")
+        //for _, e := range v.valueList {
+        //    log.Printf("=== %v", e)
+        //}
     }
 }
 

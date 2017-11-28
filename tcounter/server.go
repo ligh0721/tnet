@@ -7,6 +7,8 @@ import (
     "google.golang.org/grpc"
     "golang.org/x/net/context"
     "time"
+    _ "net/http/pprof"
+    "net/http"
 )
 
 var (
@@ -29,6 +31,10 @@ func NewCounterServer() (obj *CounterServer) {
 }
 
 func (self *CounterServer) Start() {
+    go func() {
+        http.ListenAndServe(":8101", nil)
+    }()
+
     lis, err := net.Listen("tcp", self.Addr)
     if err != nil {
         log.Fatalf("failed to listen: %v", err)

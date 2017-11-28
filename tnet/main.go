@@ -15,6 +15,8 @@ import (
 	"git.tutils.com/tutils/tnet/tcenter"
 	"git.tutils.com/tutils/tnet/messager"
 	"git.tutils.com/tutils/tnet/tcounter"
+	"net/http"
+	_ "net/http/pprof"
 )
 
 
@@ -347,13 +349,25 @@ func runTCounterAgent() {
 }
 
 func runTCounterClient() {
+	go func() {
+		http.ListenAndServe(":8103", nil)
+	}()
+
 	clt := tcounter.NewCounterClient()
 	clt.Sock = "/tmp/tcountera.sock"
 	clt.Dial()
-	for {
-		clt.SendValue(100, 10)
-		time.Sleep(20e6)
+	wg := &sync.WaitGroup{}
+	for i:=0;i<4;i++ {
+		wg.Add(1)
+		go func() {
+			for {
+				clt.SendValue(100, 10)
+				time.Sleep(20e6)
+			}
+			wg.Done()
+		}()
 	}
+	wg.Wait()
 	clt.Close()
 }
 
