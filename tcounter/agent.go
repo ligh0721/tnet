@@ -7,21 +7,10 @@ import (
     "encoding/binary"
     "bytes"
     "log"
+    "sync"
+    "google.golang.org/grpc"
+    "golang.org/x/net/context"
 )
-
-
-
-type time_count struct {
-    time int64
-    sum counter_value
-    count uint64
-}
-
-type counter_mapped struct {
-    list []*time_count
-}
-
-type counter_map = map[counter_key]*counter_mapped
 
 type payload_send_value struct {
     key   counter_key
@@ -30,12 +19,18 @@ type payload_send_value struct {
 
 type CounterAgent struct {
     Sock string
-    Map counter_map
+    Addr string
+    table counter_map
+    tableLock sync.RWMutex
+    quit chan interface{}
+    reqs chan interface{}
 }
 
 func NewCounterAgent() (obj *CounterAgent) {
     obj = &CounterAgent{}
-    obj.Map = make(counter_map)
+    obj.table = make(counter_map)
+    obj.quit = make(chan interface{}, 10)
+    obj.reqs = make(chan interface{}, 10)
     return obj
 }
 
@@ -52,48 +47,77 @@ func (self *CounterAgent) parseCommand(data []byte) {
     }
 }
 
+func (self *CounterAgent) getTable() (ret counter_map) {
+    self.tableLock.RLock()
+    defer self.tableLock.RUnlock()
+    return self.table
+}
+
+func (self *CounterAgent) setTable(table counter_map) (oldTable counter_map) {
+    self.tableLock.Lock()
+    defer self.tableLock.Unlock()
+    oldTable = self.table
+    self.table = table
+    return oldTable
+}
+
 func (self *CounterAgent) parseSendValue(payload *bytes.Buffer) {
     decoded := &payload_send_value{}
     binary.Read(payload, binary.BigEndian, &decoded.key)
     binary.Read(payload, binary.BigEndian, &decoded.value)
 
-    mapped, ok := self.Map[decoded.key]
+    table := self.getTable()  // must be in one thread
+    mapped, ok := table[decoded.key]
     if !ok {
         //log.Printf("not mapped")
         mapped = &counter_mapped{}
-        self.Map[decoded.key] = mapped
+        table[decoded.key] = mapped
     }
     //log.Printf("key(%v)", decoded.key)
-    lenList := len(mapped.list)
+    lenList := len(mapped.valueList)
     now := time.Now().Unix()
     if lenList > 0 {
-        lastElem := mapped.list[lenList - 1]
+        lastElem := mapped.valueList[lenList - 1]
         if now == lastElem.time {
             lastElem.sum = lastElem.sum + decoded.value
             lastElem.count++
             //log.Printf("update element")
         } else if now > lastElem.time {
             // append new element
-            elem := &time_count{now, decoded.value, 1}
-            mapped.list = append(mapped.list, elem)
+            elem := &value_tick{now, decoded.value, 1}
+            mapped.valueList = append(mapped.valueList, elem)
             //log.Printf("append a new element")
         }
     } else {
         // init with a new element
-        elem := &time_count{now, decoded.value, 1}
-        mapped.list = make([]*time_count, 60)[:1]
-        mapped.list[0] = elem
+        elem := &value_tick{now, decoded.value, 1}
+        mapped.valueList = make([]*value_tick, 60)[:1]
+        mapped.valueList[0] = elem
         //log.Printf("init with a new element")
     }
 }
 
 func (self *CounterAgent) Start() {
+    // listen on local unix sock
     conn, err := net.ListenUnixgram("unixgram",  &net.UnixAddr{self.Sock, "unixgram"})
     if err != nil {
         panic(err)
     }
     defer os.Remove(self.Sock)
 
+    // dial to server
+    conn2, err := grpc.Dial(self.Addr, grpc.WithInsecure())
+    if err != nil {
+        log.Fatalf("cannot connect to %s: %v", self.Addr, err)
+    }
+    clt := NewCounterServiceClient(conn2)
+
+    go self.writeLoop(clt)
+    go self.flushTableLoop()
+    self.readLoop(conn)
+}
+
+func (self *CounterAgent) readLoop(conn *net.UnixConn) {
     var buf [0xffff]byte
     for {
         n, err := conn.Read(buf[:])
@@ -102,14 +126,52 @@ func (self *CounterAgent) Start() {
         }
         self.parseCommand(buf[:n])
 
-        //v := self.Map[100]
-        //log.Printf("dump:")
-        //for _, e := range v.list {
-        //    log.Printf("%v", e)
-        //}
+        v := self.table[100]
+        log.Printf("\n\n=== dump:")
+        for _, e := range v.valueList {
+            log.Printf("=== %v", e)
+        }
     }
 }
 
-func (self *CounterAgent) archive() {
+func (self *CounterAgent) flushTable() {
+    table := self.setTable(make(counter_map))
+    reqTable := make(map[uint32]*CounterMapped)
+    for k, v := range table {
+        valueList := make([]*ValueTick, len(v.valueList))
+        for i, e := range v.valueList {
+            valueList[i] = &ValueTick{e.time, e.sum, e.count}
+        }
+        reqTable[k] = &CounterMapped{valueList}
+    }
 
+    req := &SendTableReq{reqTable}
+    self.reqs <- req
+}
+
+func (self *CounterAgent) flushTableLoop() {
+    for {
+        select {
+        case <-self.quit:
+            return
+        default:
+        }
+        time.Sleep(send_table_interval * 1e9)
+        self.flushTable()
+    }
+}
+
+func (self *CounterAgent) writeLoop(clt CounterServiceClient) {
+    for {
+        select {
+        case <-self.quit:
+            return
+        case req_ := <-self.reqs:
+            req := req_.(*SendTableReq)
+            _, err := clt.SendTable(context.Background(), req)
+            if err != nil {
+                log.Fatalf("SendTable err: %v", err)
+            }
+        }
+    }
 }

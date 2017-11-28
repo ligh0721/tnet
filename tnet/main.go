@@ -333,9 +333,16 @@ func runTCenterClient() {
 	}
 }
 
+func runTCounterServer() {
+	svr := tcounter.NewCounterServer()
+	svr.Addr = ":3088"
+	svr.Start()
+}
+
 func runTCounterAgent() {
 	agent := tcounter.NewCounterAgent()
 	agent.Sock = "/tmp/tcountera.sock"
+	agent.Addr = "localhost:3088"
 	agent.Start()
 }
 
@@ -345,7 +352,7 @@ func runTCounterClient() {
 	clt.Dial()
 	for {
 		clt.SendValue(100, 10)
-		time.Sleep(0.4e9)
+		time.Sleep(20e6)
 	}
 	clt.Close()
 }
@@ -380,6 +387,9 @@ func main() {
 
 	case "tcenterc":
 		runTCenterClient()
+
+	case "tcounters":
+		runTCounterServer()
 
 	case "tcountera":
 		runTCounterAgent()

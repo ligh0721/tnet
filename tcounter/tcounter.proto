@@ -2,14 +2,14 @@ syntax = "proto3";
 
 package tcounter;
 
-message TimeCount {
+message ValueTick {
     int64 time = 1;
     int64 sum = 2;
     uint64 count = 3;
 }
 
 message CounterMapped {
-    repeated TimeCount countList = 1;
+    repeated ValueTick valueList = 1;
 }
 
 message SendTableReq {
@@ -19,6 +19,6 @@ message SendTableReq {
 message EmptyRsp {
 }
 
-service TCounterService {
+service CounterService {
     rpc sendTable(SendTableReq) returns(EmptyRsp);
 }
