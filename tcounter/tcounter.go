@@ -25,6 +25,8 @@ type value_tick struct {
 
 type counter_mapped struct {
     valueList []*value_tick
+    saveBegin int64
+    saveEnd int64
 }
 
 type counter_map = map[counter_key]*counter_mapped

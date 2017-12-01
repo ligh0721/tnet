@@ -2,8 +2,8 @@ package messager
 
 import (
 	"database/sql"
-	"encoding/json"
 	_ "github.com/go-sql-driver/mysql"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"time"
