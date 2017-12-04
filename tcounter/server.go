@@ -105,7 +105,7 @@ func (self *CounterServer) Start() {
 
 func (self *CounterServer) serveHttp() {
     sv := http.NewServeMux()
-    sv.HandleFunc("/chart", self.handleHttpChart)
+    sv.HandleFunc("/cgi/chart", self.handleHttpChart)
     err := http.ListenAndServe(self.HttpAddr, sv)
     if err != nil {
         log.Fatalf("%v", err)
