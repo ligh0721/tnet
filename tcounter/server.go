@@ -217,14 +217,19 @@ func (self *CounterServer) loadTableMapped(key counter_key, begin int64, end int
 
     self.tableLock.RLock()
     if v, ok := self.table[key]; ok {
-        if v.valueList[v.saveBegin].time <= end {
+        mergeBegin := (begin - v.saveBegin) / alignment + v.saveBegin
+        mergeEnd := (end - v.saveEnd) / alignment + v.saveEnd
+        if v.saveBegin <= mergeEnd && v.saveEnd >= mergeBegin {
             // merge
-            for i:=v.saveBegin; i<=v.saveEnd; i++ {
+            if mergeBegin < v.saveBegin {
+                mergeBegin = v.saveBegin
+            }
+            if mergeEnd > v.saveEnd {
+                mergeEnd = v.saveEnd
+            }
+            for i:=mergeBegin; i<=mergeEnd; i++ {
                 value := v.valueList[i]
                 j := (value.time - begin) / alignment
-                if j >= num {
-                    break
-                }
                 ret[j].S += value.sum
                 ret[j].C += value.count
             }
