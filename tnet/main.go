@@ -338,12 +338,12 @@ func runTCenterClient() {
 func runTCounterServer() {
 	svr := tcounter.NewCounterServer()
 	svr.Addr = ":3088"
-	svr.DbCfg.Host = "tvpsx.tutils.com"
-	svr.DbCfg.Port = 53306
+	svr.DbCfg.Host = "localhost"
+	svr.DbCfg.Port = 3306
 	svr.DbCfg.Name = "tcounter"
 	svr.DbCfg.User = "tcounter"
 	svr.DbCfg.Pass = "tcounter"
-	svr.HttpAddr = ":8080"
+	svr.HttpAddr = ":51001"
 
 	svr.Start()
 }
