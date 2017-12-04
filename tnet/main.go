@@ -55,7 +55,7 @@ type UdpTunServerExt struct {
 }
 
 func buildParams() []byte {
-	buf := bytes.NewBuffer([]byte{})
+	buf := bytes.NewBuffer(make([]byte, 0, bytes.MinRead))
 	buf.WriteByte(0x00)
 	writeArg := false
 	needSep := false
@@ -338,6 +338,13 @@ func runTCenterClient() {
 func runTCounterServer() {
 	svr := tcounter.NewCounterServer()
 	svr.Addr = ":3088"
+	svr.DbCfg.Host = "tvpsx.tutils.com"
+	svr.DbCfg.Port = 53306
+	svr.DbCfg.Name = "tcounter"
+	svr.DbCfg.User = "tcounter"
+	svr.DbCfg.Pass = "tcounter"
+	svr.HttpAddr = ":8080"
+
 	svr.Start()
 }
 

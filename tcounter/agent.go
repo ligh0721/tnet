@@ -36,6 +36,31 @@ func NewCounterAgent() (obj *CounterAgent) {
     return obj
 }
 
+func (self *CounterAgent) Start() {
+    go func() {
+        http.ListenAndServe(":8102", nil)
+    }()
+
+    // listen on local unix sock
+    os.Remove(self.Sock)
+    conn, err := net.ListenPacket("unixgram",  self.Sock)
+    if err != nil {
+        panic(err)
+    }
+    defer os.Remove(self.Sock)
+
+    // dial to server
+    conn2, err := grpc.Dial(self.Addr, grpc.WithInsecure())
+    if err != nil {
+        log.Fatalf("cannot connect to %s: %v", self.Addr, err)
+    }
+    clt := NewCounterServiceClient(conn2)
+
+    go self.writeLoop(clt)
+    go self.flushTableLoop()
+    self.readLoop(conn)
+}
+
 func (self *CounterAgent) parseCommand(data []byte) {
     payload := bytes.NewBuffer(data)
     var cmd uint32
@@ -77,7 +102,7 @@ func (self *CounterAgent) parseSendValue(payload *bytes.Buffer) {
     }
     //log.Printf("key(%v)", decoded.key)
     lenList := len(mapped.valueList)
-    now := time.Now().Unix()
+    now := time.Now().Unix() / alignment * alignment
     if lenList > 0 {
         lastElem := mapped.valueList[lenList - 1]
         if now == lastElem.time {
@@ -93,40 +118,16 @@ func (self *CounterAgent) parseSendValue(payload *bytes.Buffer) {
     } else {
         // init with a new element
         elem := &value_tick{now, decoded.value, 1}
-        mapped.valueList = make([]*value_tick, 60)[:1]
+        mapped.valueList = make([]*value_tick, 1, send_table_interval / alignment * 2)
         mapped.valueList[0] = elem
         //log.Printf("init with a new element")
     }
 }
 
-func (self *CounterAgent) Start() {
-    go func() {
-        http.ListenAndServe(":8102", nil)
-    }()
-
-    // listen on local unix sock
-    conn, err := net.ListenUnixgram("unixgram",  &net.UnixAddr{self.Sock, "unixgram"})
-    if err != nil {
-        panic(err)
-    }
-    defer os.Remove(self.Sock)
-
-    // dial to server
-    conn2, err := grpc.Dial(self.Addr, grpc.WithInsecure())
-    if err != nil {
-        log.Fatalf("cannot connect to %s: %v", self.Addr, err)
-    }
-    clt := NewCounterServiceClient(conn2)
-
-    go self.writeLoop(clt)
-    go self.flushTableLoop()
-    self.readLoop(conn)
-}
-
-func (self *CounterAgent) readLoop(conn *net.UnixConn) {
+func (self *CounterAgent) readLoop(conn net.PacketConn) {
     var buf [0xffff]byte
     for {
-        n, err := conn.Read(buf[:])
+        n, _, err := conn.ReadFrom(buf[:])
         if err != nil {
             log.Fatalf("%v", err)
         }

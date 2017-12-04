@@ -8,10 +8,11 @@ const (
     type_add = 0
     type_set = 1
 
-    send_table_interval = 10  // flush table per 10 seconds
+    alignment = 5
+    send_table_interval = alignment * 2  // flush table per 10 seconds
     cahce_left_offset = send_table_interval * 2
-    cache_range = cahce_left_offset + send_table_interval * 1
-
+    cache_range = cahce_left_offset + send_table_interval * 10
+    cache_size = cache_range / alignment
 )
 
 type counter_key = uint32
