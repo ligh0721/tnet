@@ -351,7 +351,7 @@ func runTCounterServer() {
 func runTCounterAgent() {
 	agent := tcounter.NewCounterAgent()
 	agent.Sock = "/tmp/tcountera.sock"
-	agent.Addr = "tvpx.tutils.com:53088"
+	agent.Addr = "tvpsx.tutils.com:53088"
 	agent.Start()
 }
 
