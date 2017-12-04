@@ -172,7 +172,7 @@ func (self *CounterServer) handleHttpChart(w http.ResponseWriter, r *http.Reques
     }
 
     // get callback, for jsonp
-    if v, err := self.getHttpGetParam(r, "jsonp"); err != nil || len(v) == 0 {
+    if v, err := self.getHttpGetParam(r, "callback"); err != nil || len(v) == 0 {
         callback = ""
     } else {
         callback = v
