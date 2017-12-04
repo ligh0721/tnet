@@ -217,8 +217,10 @@ func (self *CounterServer) loadTableMapped(key counter_key, begin int64, end int
 
     self.tableLock.RLock()
     if v, ok := self.table[key]; ok {
-        mergeBegin := (begin - v.saveBegin) / alignment + v.saveBegin
-        mergeEnd := (end - v.saveEnd) / alignment + v.saveEnd
+        base := v.valueList[v.saveBegin].time
+        mergeBegin := (begin - base) / alignment + v.saveBegin
+        mergeEnd := (end - base) / alignment + v.saveBegin
+        //log.Printf("http %v->%v, mem %v->%v", mergeBegin, mergeEnd, v.saveBegin, v.saveEnd)
         if v.saveBegin <= mergeEnd && v.saveEnd >= mergeBegin {
             // merge
             if mergeBegin < v.saveBegin {
