@@ -337,7 +337,7 @@ func runTCenterClient() {
 
 func runTCounterServer() {
 	svr := tcounter.NewCounterServer()
-	svr.Addr = ":3088"
+	svr.Addr = ":53088"
 	svr.DbCfg.Host = "localhost"
 	svr.DbCfg.Port = 3306
 	svr.DbCfg.Name = "tcounter"
@@ -351,7 +351,7 @@ func runTCounterServer() {
 func runTCounterAgent() {
 	agent := tcounter.NewCounterAgent()
 	agent.Sock = "/tmp/tcountera.sock"
-	agent.Addr = "localhost:3088"
+	agent.Addr = "tvpx.tutils.com:53088"
 	agent.Start()
 }
 
