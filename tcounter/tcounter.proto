@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package tcounter;
+
+message ValueTick {
+    int64 time = 1;
+    int64 sum = 2;
+    uint64 count = 3;
+}
+
+message CounterMapped {
+    repeated ValueTick valueList = 1;
+}
+
+message SendTableReq {
+    map<uint32, CounterMapped> table = 1;
+}
+
+message EmptyRsp {
+}
+
+service CounterService {
+    rpc sendTable(SendTableReq) returns(EmptyRsp);
+}

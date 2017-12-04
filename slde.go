@@ -151,7 +151,7 @@ func (self *Slde) encodeHeader() {
 
 func NewSlde() (obj *Slde) {
 	obj = new(Slde)
-	obj.writebuf = bytes.NewBuffer([]byte{})
+	obj.writebuf = &bytes.Buffer{}
 	obj.writebuf.Grow(0xffff)
 	obj.length = -1
 	obj.nextToWrite = SLDE_HEADER_SIZE
@@ -160,7 +160,7 @@ func NewSlde() (obj *Slde) {
 
 func EncodeToSldeDataFromBytes(data []byte) (ret []byte, err error) {
 	obj := new(Slde)
-	obj.writebuf = bytes.NewBuffer([]byte{})
+	obj.writebuf = &bytes.Buffer{}
 	obj.writebuf.Grow(SLDE_HEADER_SIZE + len(data) + 1)
 	ret, err = obj.Encode(data)
 	return ret, err

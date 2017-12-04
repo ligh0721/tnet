@@ -71,7 +71,7 @@ func NewEncryptConnAgent(peer *net.TCPConn, raddr string) (obj *EncryptTunPeer) 
 
 // connect = cmd:uint16 + connId:uint32
 func packConnect(connId uint32) (ret []byte) {
-	payload := bytes.NewBuffer([]byte{})
+	payload := bytes.NewBuffer(make([]byte, 0, bytes.MinRead))
 	binary.Write(payload, binary.BigEndian, cmd_connect)
 	binary.Write(payload, binary.BigEndian, connId)
 	ret, _ = EncodeToSldeDataFromBytes(payload.Bytes())
@@ -81,7 +81,7 @@ func packConnect(connId uint32) (ret []byte) {
 
 // write = cmd:uint16 + connId:uint32 + dataLen:uint32 + data:string(dataLen)
 func packData(connId uint32, data []byte) (ret []byte) {
-	payload := bytes.NewBuffer([]byte{})
+	payload := bytes.NewBuffer(make([]byte, 0, bytes.MinRead))
 	binary.Write(payload, binary.BigEndian, cmd_data)
 	binary.Write(payload, binary.BigEndian, connId)
 	dataLen := uint32(len(data))
@@ -94,7 +94,7 @@ func packData(connId uint32, data []byte) (ret []byte) {
 
 // close cmd:uint16 + connId:uint32
 func packClose(connId uint32) (ret []byte) {
-	payload := bytes.NewBuffer([]byte{})
+	payload := bytes.NewBuffer(make([]byte, 0, bytes.MinRead))
 	binary.Write(payload, binary.BigEndian, cmd_close)
 	binary.Write(payload, binary.BigEndian, connId)
 	ret, _ = EncodeToSldeDataFromBytes(payload.Bytes())
