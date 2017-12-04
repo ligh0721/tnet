@@ -123,10 +123,11 @@ func (self *CounterServer) handleHttpChart(w http.ResponseWriter, r *http.Reques
     var (
         id counter_key
         begin, end int64
+        callback string
     )
 
     // get id
-    if v, err := self.getHttpGetParam(r, "id"); err != nil || len(v) == 0 {
+    if v, err := self.getHttpGetParam(r, "id"); err != nil || v == "" {
         responseError(w, 1, 11, err.Error())
         return
     } else {
@@ -170,6 +171,13 @@ func (self *CounterServer) handleHttpChart(w http.ResponseWriter, r *http.Reques
         return
     }
 
+    // get callback, for jsonp
+    if v, err := self.getHttpGetParam(r, "jsonp"); err != nil || len(v) == 0 {
+        callback = ""
+    } else {
+        callback = v
+    }
+
     // rsp
     pts, err := self.loadTableMapped(id, begin, end)
     if err != nil {
@@ -179,7 +187,12 @@ func (self *CounterServer) handleHttpChart(w http.ResponseWriter, r *http.Reques
     begin = begin / alignment * alignment
     end = end / alignment * alignment
     data := &HttpChartRspData{id, begin, end, alignment, pts}
-    responseData(w, 1, data)
+
+    if callback != "" {
+        responeJsonp(w, 1, data, callback)
+    } else {
+        responseData(w, 1, data)
+    }
 }
 
 func (self *CounterServer) loadTableMapped(key counter_key, begin int64, end int64) (ret []ChartPoint, err error) {
@@ -248,10 +261,44 @@ func responseData(w http.ResponseWriter, ver int, data interface{}) {
     }
     jsStr, err := json.Marshal(rsp)
     if err != nil {
-        responseError(w, ver, -1, err.Error())
-        return
+        rsp := HttpRsp{
+            ver,
+            -1,
+            err.Error(),
+            EMPTY_HTTP_RSP_DATA,
+        }
+        jsStr, err = json.Marshal(rsp)
+        if err != nil {
+            log.Printf(err.Error())
+            return
+        }
     }
     w.Write(jsStr)
+}
+
+func responeJsonp(w http.ResponseWriter, ver int, data interface{}, callback string) {
+    w.Header().Add("content-type", "application/json; charset=utf-8")
+    rsp := HttpRsp{
+        ver,
+        0,
+        "",
+        data,
+    }
+    jsStr, err := json.Marshal(rsp)
+    if err != nil {
+        rsp := HttpRsp{
+            ver,
+            -1,
+            err.Error(),
+            EMPTY_HTTP_RSP_DATA,
+        }
+        jsStr, err = json.Marshal(rsp)
+        if err != nil {
+            log.Printf(err.Error())
+            return
+        }
+    }
+    w.Write([]byte(fmt.Sprintf("%s(%s);", callback, jsStr)))
 }
 
 func (self *CounterServer) SendTable(ctx context.Context, req *SendTableReq) (rsp *EmptyRsp, err error) {
