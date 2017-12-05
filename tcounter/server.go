@@ -123,7 +123,7 @@ func (self *CounterServer) getHttpGetParam(r *http.Request, param string) (ret s
 func (self *CounterServer) handleHttpChart(w http.ResponseWriter, r *http.Request) {
     var (
         id counter_key
-        begin, end int64
+        begin, end, align int64
         callback string
     )
 
@@ -166,10 +166,25 @@ func (self *CounterServer) handleHttpChart(w http.ResponseWriter, r *http.Reques
         end = v
     }
 
-    if end < begin {
-        err := errors.New("end < begin")
+    if end < begin || begin < 0 || end < 0 {
+        err := errors.New("begin or end value err")
         responseError(w, 1, 14, err.Error())
         return
+    }
+
+    // get align
+    if v, err := self.getHttpGetParam(r, "align"); err != nil || len(v) == 0 {
+        align = alignment
+    } else {
+        v, err := strconv.ParseInt(v, 10, 64)
+        if err != nil {
+            responseError(w, 1, 14, err.Error())
+            return
+        }
+        align = v
+    }
+    if align < alignment {
+        align = alignment
     }
 
     // get callback, for jsonp
@@ -180,17 +195,35 @@ func (self *CounterServer) handleHttpChart(w http.ResponseWriter, r *http.Reques
     }
 
     // rsp
-    //begin = begin / alignment * alignment
-    //end = end / alignment * alignment
+    begin = begin / alignment * alignment
+    end = end / alignment * alignment
     pts, err := self.loadTableMapped(id, begin, end)
     if err != nil {
         responseError(w, 1, 15, err.Error())
         return
     }
-    begin = begin / alignment * alignment
-    end = end / alignment * alignment
-    data := &HttpChartRspData{id, begin, end, alignment, pts}
 
+    if align > alignment {
+        begin = begin / align * align
+        newPts := make([]ChartPoint, 1, int64(float64(align) / alignment * float64(len(pts))) + 2)
+        var j int64 = 0
+        for i, pt := range pts {
+            tm := begin + int64(i) * alignment
+            newTm := tm / align * align
+            curJ := (newTm - begin) / align
+
+            if curJ > j {
+                j = curJ
+                newPts = append(newPts, ChartPoint{})
+            }
+            newPts[j].S += pt.S
+            newPts[j].C += pt.C
+        }
+        end = begin + j * align
+        pts = newPts
+    }
+
+    data := &HttpChartRspData{id, begin, end, align, pts}
     if callback != "" {
         responeJsonp(w, 1, data, callback)
     } else {
