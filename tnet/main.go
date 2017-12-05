@@ -371,7 +371,7 @@ func runTCounterClient() {
 		wg.Add(1)
 		go func() {
 			for {
-				clt.SendValue(100, rnd.Int63() % int64(time.Now().Hour()))
+				clt.SendValue(100, rnd.Int63() % int64(time.Now().Hour() + 1))
 				time.Sleep(20e6)
 			}
 			wg.Done()
