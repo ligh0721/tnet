@@ -179,6 +179,8 @@ func (self *CounterServer) handleHttpChart(w http.ResponseWriter, r *http.Reques
     }
 
     // rsp
+    //begin = begin / alignment * alignment
+    //end = end / alignment * alignment
     pts, err := self.loadTableMapped(id, begin, end)
     if err != nil {
         responseError(w, 1, 15, err.Error())
@@ -221,6 +223,7 @@ func (self *CounterServer) loadTableMapped(key counter_key, begin int64, end int
         mergeBegin := (begin - base) / alignment + v.saveBegin
         mergeEnd := (end - base) / alignment + v.saveBegin
         //log.Printf("http %v->%v, mem %v->%v", mergeBegin, mergeEnd, v.saveBegin, v.saveEnd)
+        log.Printf("@1@%v, %v, %v, %v, %v, %v, %v, %v", begin, end, v.saveBegin, v.saveEnd, mergeBegin, mergeEnd, base, num)
         if v.saveBegin <= mergeEnd && v.saveEnd >= mergeBegin {
             // merge
             if mergeBegin < v.saveBegin {
@@ -229,10 +232,11 @@ func (self *CounterServer) loadTableMapped(key counter_key, begin int64, end int
             if mergeEnd > v.saveEnd {
                 mergeEnd = v.saveEnd
             }
+            log.Printf("@2@%v, %v, %v, %v, %v, %v, %v", begin, end, v.saveBegin, v.saveEnd, mergeBegin, mergeEnd, base)
             for i:=mergeBegin; i<=mergeEnd; i++ {
                 value := v.valueList[i]
                 j := (value.time - begin) / alignment
-                log.Printf("@@%v, %v, %v, %v, %v, %v, %v, %v", begin, end, v.saveBegin, v.saveEnd, mergeBegin, mergeEnd, value.time, j)
+                log.Printf("@3@%v, %v, %v, %v, %v, %v, %v, %v", begin, end, v.saveBegin, v.saveEnd, mergeBegin, mergeEnd, value.time, j)
                 ret[j].S += value.sum
                 ret[j].C += value.count
             }
