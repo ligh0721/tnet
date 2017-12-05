@@ -17,6 +17,7 @@ import (
     "strconv"
     "errors"
     "sync"
+    "math"
 )
 
 var (
@@ -220,8 +221,8 @@ func (self *CounterServer) loadTableMapped(key counter_key, begin int64, end int
     self.tableLock.RLock()
     if v, ok := self.table[key]; ok {
         base := v.valueList[v.saveBegin].time
-        mergeBegin := (begin - base) / alignment + v.saveBegin
-        mergeEnd := (end - base) / alignment + v.saveBegin
+        mergeBegin := int64(math.Floor(float64(begin - base) / alignment)) + v.saveBegin  // must use floor div
+        mergeEnd := int64(math.Floor(float64(end - base) / alignment)) + v.saveBegin
         //log.Printf("http %v->%v, mem %v->%v", mergeBegin, mergeEnd, v.saveBegin, v.saveEnd)
         log.Printf("@1@%v, %v, %v, %v, %v, %v, %v, %v", begin, end, v.saveBegin, v.saveEnd, mergeBegin, mergeEnd, base, num)
         if v.saveBegin <= mergeEnd && v.saveEnd >= mergeBegin {

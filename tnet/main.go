@@ -18,6 +18,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"math/rand"
+	"math"
 )
 
 
@@ -34,14 +35,14 @@ func grow(list interface{}) {
 }
 
 func test() {
-	a := [4]int{1}
-	arr := a[:3]
-	println(cap(arr))
-	arr = append(arr, 10)
-	println(cap(arr))
-	arr = append(arr, 10)
-	println(cap(arr))
-	log.Printf("%v", arr)
+	var base int64 = 1512458440;
+	var begin int64 = 1512403200;
+	var end int64 = 1512458436;
+	const alignment = 5;
+	var saveBegin int64 = 2;
+	mergeBegin := (begin - base) / alignment + saveBegin;
+	mergeEnd := int64(math.Floor(float64(end - base) / alignment)) + saveBegin;
+	log.Printf("@1@%v, %v %v", -4/5, mergeBegin, mergeEnd)
 }
 
 type UdpTunServerExt struct {
