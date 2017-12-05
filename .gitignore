@@ -1,3 +1,4 @@
 tnet/tnet/tnet
 *.swp
 *.exe
+*.pyc
