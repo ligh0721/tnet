@@ -17,6 +17,7 @@ import (
 	"git.tutils.com/tutils/tnet/tcounter"
 	"net/http"
 	_ "net/http/pprof"
+	"math/rand"
 )
 
 
@@ -360,6 +361,7 @@ func runTCounterClient() {
 		http.ListenAndServe(":8103", nil)
 	}()
 
+	rnd := rand.New(rand.NewSource(time.Now().Unix()))
 	clt := tcounter.NewCounterClient()
 	clt.Sock = "/tmp/tcountera.sock"
 	clt.Dial()
@@ -368,7 +370,7 @@ func runTCounterClient() {
 		wg.Add(1)
 		go func() {
 			for {
-				clt.SendValue(100, 10)
+				clt.SendValue(100, rnd.Int63() % 100)
 				time.Sleep(20e6)
 			}
 			wg.Done()

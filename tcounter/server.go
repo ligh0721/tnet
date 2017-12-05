@@ -232,6 +232,7 @@ func (self *CounterServer) loadTableMapped(key counter_key, begin int64, end int
             for i:=mergeBegin; i<=mergeEnd; i++ {
                 value := v.valueList[i]
                 j := (value.time - begin) / alignment
+                log.Printf("@@%v, %v, %v, %v, %v, %v, %v, %v", begin, end, v.saveBegin, v.saveEnd, mergeBegin, mergeEnd, value.time, j)
                 ret[j].S += value.sum
                 ret[j].C += value.count
             }
