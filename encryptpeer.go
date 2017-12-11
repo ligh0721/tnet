@@ -72,6 +72,7 @@ func NewEncryptConnAgent(peer *net.TCPConn, raddr string) (obj *EncryptTunPeer) 
 	obj.connChanMap = new(sync.Map)
 	obj.connCloseNotifyChan = make(chan uint32, max_close_notify_chan_size)
 	obj.tcou = tcounter.NewCounterClient()
+	obj.tcou.Sock = "/tmp/tcountera.sock"
 	return obj
 }
 
