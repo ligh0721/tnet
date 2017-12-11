@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"sync"
+	"git.tutils.com/tutils/tnet/tcounter"
 )
 
 /* encrypt connection
@@ -29,6 +30,9 @@ const (
 	max_tcp_read               = 0xffff
 	max_peer_conn_op_chan_size = 10
 	max_close_notify_chan_size = 1024
+
+	tcounter_id_up = 200
+	tcounter_id_down = 201
 )
 
 type connChanItem struct {
@@ -45,6 +49,7 @@ type EncryptTunPeer struct {
 	connCloseNotifyChan chan uint32
 	wg                  sync.WaitGroup
 	lstn                *net.TCPListener
+	tcou				*tcounter.CounterClient
 }
 
 func NewEncryptConnProxy(peer *net.TCPConn, laddr string) (obj *EncryptTunPeer) {
@@ -66,6 +71,7 @@ func NewEncryptConnAgent(peer *net.TCPConn, raddr string) (obj *EncryptTunPeer) 
 	obj.mode = server_mode_agent
 	obj.connChanMap = new(sync.Map)
 	obj.connCloseNotifyChan = make(chan uint32, max_close_notify_chan_size)
+	obj.tcou = tcounter.NewCounterClient()
 	return obj
 }
 
@@ -192,6 +198,9 @@ func (self *EncryptTunPeer) startConnHandler(conn *net.TCPConn, connId uint32) {
 		n, err0 := conn.Read(buf)
 		if n > 0 {
 			// tell to (connect and )send data
+			if self.mode == server_mode_agent {
+				self.tcou.SendValue(tcounter_id_down, int64(len(buf[:n])))
+			}
 			log.Printf("send conn(%d) op: senddata", connId)
 			protodata := packData(connId, buf[:n])
 			self.peer.Write(protodata)
@@ -265,6 +274,9 @@ func (self *EncryptTunPeer) goStartPeerConnOpHandler(conn *net.TCPConn, connId u
 			case cmd_data:
 				data := unpackData(item.reader)
 				conn.Write(data)
+				if self.mode == server_mode_agent {
+					self.tcou.SendValue(tcounter_id_up, int64(len(data)))
+				}
 
 			case cmd_close:
 				unpackClose(item.reader)
@@ -414,6 +426,7 @@ func (self *EncryptTunPeer) startProxy() (err error) {
 func (self *EncryptTunPeer) startAgent() (err error) {
 	log.Println("start agent")
 	self.startPeerHandler()
+	self.tcou.Dial()
 	return nil
 }
 
