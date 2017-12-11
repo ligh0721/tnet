@@ -299,6 +299,7 @@ func runAgent() {
 		svr.Addr = os.Args[2]
 		svr.OnAcceptConnCallback = func(self *tnet.TcpServer, conn *net.TCPConn, connId uint32) (ok bool, readSize int, connExt interface{}) {
 			agent := tnet.NewEncryptConnAgent(conn, os.Args[3])
+			log.Printf("@@@@@ OnAcceptConnCallback")
 			go agent.Start()
 			return true, 0, agent
 		}
