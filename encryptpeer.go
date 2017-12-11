@@ -426,8 +426,9 @@ func (self *EncryptTunPeer) startProxy() (err error) {
 
 func (self *EncryptTunPeer) startAgent() (err error) {
 	log.Println("start agent")
-	self.startPeerHandler()
 	self.tcou.Dial()
+	self.startPeerHandler()
+	self.tcou.Close()
 	return nil
 }
 
