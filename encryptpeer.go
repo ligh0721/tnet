@@ -71,8 +71,7 @@ func NewEncryptConnAgent(peer *net.TCPConn, raddr string) (obj *EncryptTunPeer) 
 	obj.mode = server_mode_agent
 	obj.connChanMap = new(sync.Map)
 	obj.connCloseNotifyChan = make(chan uint32, max_close_notify_chan_size)
-	obj.tcou = tcounter.NewCounterClient()
-	obj.tcou.Sock = "/tmp/tcountera.sock"
+	obj.tcou = tcounter.NewCounterClientUseUnix("/tmp/tcountera.sock")
 	return obj
 }
 
@@ -426,7 +425,6 @@ func (self *EncryptTunPeer) startProxy() (err error) {
 
 func (self *EncryptTunPeer) startAgent() (err error) {
 	log.Println("start agent")
-	self.tcou.Dial()
 	self.startPeerHandler()
 	self.tcou.Close()
 	return nil

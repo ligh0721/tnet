@@ -18,7 +18,6 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"math/rand"
-	"math"
 )
 
 
@@ -35,14 +34,9 @@ func grow(list interface{}) {
 }
 
 func test() {
-	var base int64 = 1512458440;
-	var begin int64 = 1512403200;
-	var end int64 = 1512458436;
-	const alignment = 5;
-	var saveBegin int64 = 2;
-	mergeBegin := (begin - base) / alignment + saveBegin;
-	mergeEnd := int64(math.Floor(float64(end - base) / alignment)) + saveBegin;
-	log.Printf("@1@%v, %v %v", -4/5, mergeBegin, mergeEnd)
+	conn, _ := net.ListenPacket("udp", ":")
+	buf := []byte{0, 0}
+	conn.ReadFrom(buf)
 }
 
 type UdpTunServerExt struct {
@@ -352,9 +346,7 @@ func runTCounterServer() {
 }
 
 func runTCounterAgent() {
-	agent := tcounter.NewCounterAgent()
-	agent.Sock = "/tmp/tcountera.sock"
-	agent.Addr = "tvpsx.tutils.com:53088"
+	agent := tcounter.NewCounterAgentUseUnix("/tmp/tcountera.sock", "tvpsx.tutils.com:53088")
 	agent.Start()
 }
 
@@ -363,14 +355,12 @@ func runTCounterClient() {
 		http.ListenAndServe(":8103", nil)
 	}()
 
-	rnd := rand.New(rand.NewSource(time.Now().Unix()))
-	clt := tcounter.NewCounterClient()
-	clt.Sock = "/tmp/tcountera.sock"
-	clt.Dial()
+	clt := tcounter.NewCounterClientUseUnix("/tmp/tcountera.sock")
 	wg := &sync.WaitGroup{}
 	for i:=0;i<4;i++ {
 		wg.Add(1)
 		go func() {
+			rnd := rand.New(rand.NewSource(time.Now().Unix()))
 			for {
 				clt.SendValue(100, int64(rnd.Int() % (time.Now().Hour() + 1)))
 				time.Sleep(20e6)

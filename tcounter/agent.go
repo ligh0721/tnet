@@ -20,45 +20,61 @@ type payload_send_value struct {
 }
 
 type CounterAgent struct {
-    Sock string
-    Addr string
+    conn net.PacketConn
+    raddr string
     table counter_map
     tableLock sync.RWMutex
     quit chan interface{}
     reqs chan interface{}
 }
 
-func NewCounterAgent() (obj *CounterAgent) {
+func NewCounterAgentUseUnix(sock string, serverAddr string) (obj *CounterAgent) {
     obj = &CounterAgent{}
     obj.table = make(counter_map)
     obj.quit = make(chan interface{}, 10)
     obj.reqs = make(chan interface{}, 10)
+
+    os.Remove(sock)
+    var err error
+    obj.conn, err = net.ListenPacket("unixgram",  sock)
+    if err != nil {
+        log.Fatalf("%v", err)
+    }
+    obj.raddr = serverAddr
+    return obj
+}
+
+func NewCounterAgentUseUdp(laddr string, serverAddr string) (obj *CounterAgent) {
+    obj = &CounterAgent{}
+    obj.table = make(counter_map)
+    obj.quit = make(chan interface{}, 10)
+    obj.reqs = make(chan interface{}, 10)
+
+    var err error
+    obj.conn, err = net.ListenPacket("udp",  laddr)
+    if err != nil {
+        log.Fatalf("%v", err)
+    }
+    obj.raddr = serverAddr
     return obj
 }
 
 func (self *CounterAgent) Start() {
+    defer os.Remove(self.conn.LocalAddr().String())
     go func() {
         http.ListenAndServe(":8102", nil)
     }()
 
-    // listen on local unix sock
-    os.Remove(self.Sock)
-    conn, err := net.ListenPacket("unixgram",  self.Sock)
-    if err != nil {
-        panic(err)
-    }
-    defer os.Remove(self.Sock)
-
     // dial to server
-    conn2, err := grpc.Dial(self.Addr, grpc.WithInsecure())
+    rconn, err := grpc.Dial(self.raddr, grpc.WithInsecure())
     if err != nil {
-        log.Fatalf("cannot connect to %s: %v", self.Addr, err)
+        log.Fatalf("cannot connect to %s: %v", self.raddr, err)
     }
-    clt := NewCounterServiceClient(conn2)
+    clt := NewCounterServiceClient(rconn)
 
     go self.writeLoop(clt)
     go self.flushTableLoop()
-    self.readLoop(conn)
+    self.readLoop()
 }
 
 func (self *CounterAgent) parseCommand(data []byte) {
@@ -124,10 +140,10 @@ func (self *CounterAgent) parseSendValue(payload *bytes.Buffer) {
     }
 }
 
-func (self *CounterAgent) readLoop(conn net.PacketConn) {
+func (self *CounterAgent) readLoop() {
     var buf [0xffff]byte
     for {
-        n, _, err := conn.ReadFrom(buf[:])
+        n, _, err := self.conn.ReadFrom(buf[:])
         if err != nil {
             log.Fatalf("%v", err)
         }

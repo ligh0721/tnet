@@ -10,38 +10,53 @@ import (
 )
 
 type CounterClient struct {
-    Sock string
     conn net.PacketConn
     addr net.Addr
 }
 
-func NewCounterClient() (obj *CounterClient) {
+func NewCounterClientUseUnix(sock string) (obj *CounterClient) {
     obj = &CounterClient{}
-    return obj
-}
 
-func (self *CounterClient) Dial() (ret error) {
     f, err := ioutil.TempFile("", "tcounterc")
     if err != nil {
-        return err
+        return nil
     }
     addr := f.Name()
     os.Remove(addr)
 
-    self.conn, err = net.ListenPacket("unixgram", addr)
+    obj.conn, err = net.ListenPacket("unixgram", addr)
     if err != nil {
         log.Printf("%v", err)
-        return err
+        return nil
     }
     defer os.Remove(addr)
 
-    self.addr, err = net.ResolveUnixAddr("unixgram", self.Sock)
+    obj.addr, err = net.ResolveUnixAddr("unixgram", sock)
     if err != nil {
         log.Printf("%v", err)
-        return err
+        return nil
     }
 
-    return nil
+    return obj
+}
+
+func NewCounterClientUseUdp(raddr string) (obj *CounterClient) {
+    obj = &CounterClient{}
+
+    var err error
+    obj.conn, err = net.ListenPacket("udp", ":")
+    if err != nil {
+        log.Printf("%v", err)
+        return nil
+    }
+
+    obj.addr, err = net.ResolveUDPAddr("udp", raddr)
+    if err != nil {
+        log.Printf("%v", err)
+        return nil
+    }
+
+    return obj
 }
 
 func (self *CounterClient) Close() {
