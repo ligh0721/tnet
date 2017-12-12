@@ -99,7 +99,7 @@ func (self *TCenterClient) HealthLoop(loginInfoStr string) {
 }
 
 func getClientInfoStr(info *HostInfo) (ret string) {
-    s := fmt.Sprintf("os: %s\narch: %s\nhostname: %s", info.Os, info.Arch)
+    s := fmt.Sprintf("os: %s\narch: %s\nhostname: %s", info.Os, info.Arch, info.Hostname)
     if info.Interfaces != nil {
         s = s + fmt.Sprintf("\ninterfaces(%d):\n", len(info.Interfaces))
         for _, itf := range info.Interfaces {

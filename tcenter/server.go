@@ -59,7 +59,7 @@ func (self *TCenterServer) nextId() (ret uint32) {
 }
 
 func printClientInfo(id uint32, info *TCenterClientInfo) {
-    s := fmt.Sprintf("os: %s\narch: %s\nhostname: %s", info.hostInfo.Os, info.hostInfo.Arch)
+    s := fmt.Sprintf("os: %s\narch: %s\nhostname: %s", info.hostInfo.Os, info.hostInfo.Arch, info.hostInfo.Hostname)
     if info.hostInfo.Interfaces != nil {
         s = s + fmt.Sprintf("\ninterfaces(%d):\n", len(info.hostInfo.Interfaces))
         for _, itf := range info.hostInfo.Interfaces {
