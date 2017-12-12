@@ -83,6 +83,7 @@ func (self *TCenterServer) storeClientInfo(id uint32, info *TCenterClientInfo) {
         v := value.(*TCenterClientInfo)
         delta := now.Unix() - v.lastHealth.Unix()
         if delta > 120e9 {
+            log.Printf("@@ %v delta %v", k, delta)
             todel = append(todel, k)
         }
         return true
@@ -145,6 +146,7 @@ func (self *TCenterServer) ListClients(ctx context.Context, req *ListClientsReq)
 
         delta := now - v.lastHealth.Unix()
         if delta > 120e9 {
+            log.Printf("@@ %v delta %v", k, delta)
             todel = append(todel, k)
             return true
         }
@@ -158,6 +160,7 @@ func (self *TCenterServer) ListClients(ctx context.Context, req *ListClientsReq)
     })
 
     for _, d := range todel {
+        log.Printf("@del %v", d)
         self.clts.Delete(d)
     }
 
