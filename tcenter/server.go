@@ -145,6 +145,7 @@ func (self *TCenterServer) ListClients(ctx context.Context, req *ListClientsReq)
         v := value.(*TCenterClientInfo)
 
         delta := now - v.lastHealth.Unix()
+        log.Printf("@@ now%v last %v", now, v.lastHealth.Unix())
         if delta > 120e9 {
             log.Printf("@@ %v delta %v", k, delta)
             todel = append(todel, k)
