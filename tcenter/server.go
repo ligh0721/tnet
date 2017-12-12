@@ -82,7 +82,7 @@ func (self *TCenterServer) storeClientInfo(id uint32, info *TCenterClientInfo) {
         k := key.(uint32)
         v := value.(*TCenterClientInfo)
         delta := now.Unix() - v.lastHealth.Unix()
-        if delta > 120e9 {
+        if delta > 120 {
             log.Printf("@@ %v delta %v", k, delta)
             todel = append(todel, k)
         }
@@ -145,9 +145,7 @@ func (self *TCenterServer) ListClients(ctx context.Context, req *ListClientsReq)
         v := value.(*TCenterClientInfo)
 
         delta := now - v.lastHealth.Unix()
-        log.Printf("@@ now%v last %v", now, v.lastHealth.Unix())
-        if delta > 120e9 {
-            log.Printf("@@ %v delta %v", k, delta)
+        if delta > 120 {
             todel = append(todel, k)
             return true
         }
@@ -161,7 +159,7 @@ func (self *TCenterServer) ListClients(ctx context.Context, req *ListClientsReq)
     })
 
     for _, d := range todel {
-        log.Printf("@del %v", d)
+        log.Printf("del timeout client(%v)", d)
         self.clts.Delete(d)
     }
 
