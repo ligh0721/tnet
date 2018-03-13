@@ -376,6 +376,9 @@ func runTCounterClient() {
 func runQaServer() {
     qas := qa.NewQaServer()
     qas.HttpAddr = ":8080"
+    qas.StaticRoot = "qaroot/static/"
+    //qas.ExpiredAnswered = 10e9
+    //qas.ExpiredUnanswered = 10e9
     qas.Start()
 }
 

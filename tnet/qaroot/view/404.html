@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>404</title>
+    <link href="/qa/static/Buttons/css/buttons.min.css" rel="stylesheet">
+</head>
+<body>
+<div style="text-align: center;align-items: center">
+    <div style="margin-right: auto;margin-left: auto;margin-top: 30vh">
+        <span style="line-height: 80px">改验证码已失效，即将跳转到列表页</span>
+        <br>
+        <a href="/qa/view/list" class="button button-3d button-rounded">立即跳转</a>
+    </div>
+</div>
+<script>
+    setTimeout(function () {
+        location.href = "/qa/view/list"
+    }, 1000);
+</script>
+</body>
+</html>

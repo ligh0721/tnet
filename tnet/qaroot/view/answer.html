@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>请输入验证码</title>
+    <link href="/qa/static/Buttons/css/buttons.min.css" rel="stylesheet">
+    <style type="text/css">
+        body {
+            font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            margin-top: 20px;
+            text-overflow:ellipsis;
+            height:50px;
+            width:100%;
+        }
+        .header a {
+            float:right;
+            margin-right: 20px;
+        }
+        .main {
+            text-align:center;
+            align-items:center;
+            margin-top: 20px;
+        }
+        .ver {
+            margin-top: 20px;
+            margin-left:auto;
+            margin-right:auto;
+        }
+        .line{
+            height: 1px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+        }
+        .line span{
+            position: relative;
+            top: -8px;
+            background: #fff;
+            padding: 0 20px;
+        }
+        input{
+            border: 1px solid #ccc;
+            padding: 7px 0px;
+            border-radius: 3px;
+            padding-left:5px;
+            -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+            box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+            -webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
+            -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+            transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s
+        }
+        input:focus{
+            border-color: #66afe9;
+            outline: 0;
+            -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6);
+            box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6)
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <header class="header">
+        <a href="/qa/view/list" class="button button-rounded button-small">查看所有验证码</a>
+    </header>
+    <div class="line"></div>
+    <div class="main">
+            <span>ID: {{ id }}</span>
+            <div class="ver" v-if="ok">
+                <div style="width: 100%">
+                    <img :src="img_url" @error="imgerror">
+                </div>
+                <div style="text-overflow:ellipsis;">
+                    <input v-model="code" placeholder="请输入验证码"/>
+                    <button @click="submit" class="button button-primary button-rounded button-small">提交</button>
+                </div>
+            </div>
+            <div class="ver" v-else>
+                <span>该验证码已被输入</span>
+            </div>
+    </div>
+</div>
+</body>
+<script src="/qa/static/vue/vue.min.js"></script>
+<script src="/qa/static/axios/axios.min.js"></script>
+<script>
+    var v = new Vue({
+        el: "#app",
+        data: {
+            id: "",
+            img_url: "",
+            code: "",
+            alt: null,
+            ok: true
+        },
+        methods: {
+            submit: function () {
+                axios.post('/qa/api/answer/' + this.id, {
+                    "Ver": 1,
+                    "Data": {
+                        "Answer": this.code
+                    }
+                }).then(function (value) {
+                    location.href = '/qa/view/list';
+                })
+            },
+            imgerror: function () {
+                this.ok = false
+            }
+        },
+        created: function () {
+            const pattern = "/qa/view/answer/";
+            var path = window.location.pathname;
+            var n = path.indexOf(path, pattern);
+            this.id = path.slice(n+pattern.length);
+            this.img_url = "/qa/api/question/" + this.id;
+        }
+    })
+</script>
+</html>
