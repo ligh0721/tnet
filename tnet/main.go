@@ -18,7 +18,7 @@ import (
     "net/http"
     _ "net/http/pprof"
     "math/rand"
-    "git.tutils.com/tutils/tnet/qa"
+    "git.tutils.com/tutils/tnet/tqa"
 )
 
 
@@ -374,7 +374,7 @@ func runTCounterClient() {
 }
 
 func runQaServer() {
-    qas := qa.NewQaServer()
+    qas := tqa.NewQaServer()
     qas.HttpAddr = ":8080"
     qas.StaticRoot = "qaroot/static/"
     //qas.ExpiredAnswered = 10e9

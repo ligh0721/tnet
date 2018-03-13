@@ -1,4 +1,4 @@
-package qa
+package tqa
 
 import (
     "net/http"
