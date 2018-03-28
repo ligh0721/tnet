@@ -393,7 +393,7 @@ func responseData(w http.ResponseWriter, ver int, data interface{}) {
     w.Header().Add("content-type", "application/json; charset=utf-8")
     rsp := HttpRsp{
         ver,
-        0,
+        CodeSuccess,
         "",
         data,
     }
@@ -401,7 +401,7 @@ func responseData(w http.ResponseWriter, ver int, data interface{}) {
     if err != nil {
         rsp := HttpRsp{
             ver,
-            -1,
+            CodeError,
             err.Error(),
             EMPTY_HTTP_RSP_DATA,
         }
