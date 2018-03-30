@@ -3,120 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <title>请输入验证码</title>
-    <link href="/qa/static/Buttons/css/buttons.min.css" rel="stylesheet">
+    <link href="https://cdn.bootcss.com/Buttons/2.0.0/css/buttons.min.css" rel="stylesheet">
     <style type="text/css">
-        body {
-            font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-        .header {
-            margin-top: 20px;
-            text-overflow:ellipsis;
-            height:50px;
-            width:100%;
-        }
-        .header a {
-            float:right;
-            margin-right: 20px;
-        }
-        .main {
-            text-align:center;
-            align-items:center;
-            margin-top: 20px;
-        }
-        .ver {
-            margin-top: 20px;
-            margin-left:auto;
-            margin-right:auto;
-        }
-        .line{
-            height: 1px;
-            border-top: 1px solid #ddd;
-            text-align: center;
-        }
-        .line span{
-            position: relative;
-            top: -8px;
-            background: #fff;
-            padding: 0 20px;
-        }
-        input{
-            border: 1px solid #ccc;
-            padding: 7px 0px;
-            border-radius: 3px;
-            padding-left:5px;
-            -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
-            box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
-            -webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
-            -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
-            transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s
-        }
-        input:focus{
-            border-color: #66afe9;
-            outline: 0;
-            -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6);
-            box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6)
-        }
+        body{font-family:"Helvetica Neue",Helvetica,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","微软雅黑",Arial,sans-serif;margin:0;padding:0}a{text-decoration:none}.header{margin-top:20px;text-overflow:ellipsis;height:50px;width:100%}.header a{float:right;margin-right:20px}.main{text-align:center;align-items:center;margin-top:20px}.ver{margin-top:20px;margin-left:auto;margin-right:auto}.line{height:1px;border-top:1px solid #ddd;text-align:center}.line span{position:relative;top:-8px;background:#fff;padding:0 20px}input{border:1px solid #ccc;padding:7px 0;border-radius:3px;padding-left:5px;-webkit-box-shadow:inset 0 1px 1px rgba(0,0,0,.075);box-shadow:inset 0 1px 1px rgba(0,0,0,.075);-webkit-transition:border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;-o-transition:border-color ease-in-out .15s,box-shadow ease-in-out .15s;transition:border-color ease-in-out .15s,box-shadow ease-in-out .15s}input:focus{border-color:#66afe9;outline:0;-webkit-box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6);box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6)}.alert{width:80%;margin-left:auto;margin-right:auto;position:relative;padding:.75rem 1.25rem;margin-bottom:1rem;border:1px solid transparent;border-radius:.25rem}.alert-warning{color:#856404;background-color:#fff3cd;border-color:#ffeeba}.alert-danger{color:#721c24;background-color:#f8d7da;border-color:#f5c6cb}.close{float:right;font-size:1.5rem;font-weight:700;line-height:1;color:#000;text-shadow:0 1px 0 #fff;opacity:.5}.close:hover,.close:focus{color:#000;text-decoration:none;opacity:.75}.close:not(:disabled):not(.disabled){cursor:pointer}
     </style>
 </head>
 <body>
 <div id="app">
     <header class="header">
-        <a href="/qa/view/list" class="button button-rounded button-small">查看所有验证码</a>
+        <a v-if="ok" href="/qa/view/list" class="button button-3d button-rounded button-small">查看所有验证码</a>
     </header>
     <div class="line"></div>
     <div class="main">
-            <span>ID: {{ id }}</span>
-            <div class="ver" v-if="ok">
-                <div style="width: 100%">
-                    <img :src="img_url" @error="imgerror">
-                </div>
-                <div style="text-overflow:ellipsis;">
-                    <input v-model="code" placeholder="请输入验证码"/>
-                    <button @click="submit" class="button button-primary button-rounded button-small">提交</button>
-                </div>
+        <div class="ver" v-if="ok">
+            <div id="error" class="alert alert-danger" v-if="error_msg">
+                <a href="#" class="close" data-dismiss="alert" @click="error_close">
+                    &times;
+                </a>
+                <strong>错误! </strong>{{ error_msg }}
+                <a href="#" @click="reload">刷新当前页面</a>
             </div>
-            <div class="ver" v-else>
-                <span>该验证码已被输入</span>
+            <span>当前验证码id为{{ id }}</span>
+            <div style="width: 100%">
+                <img :src="img_url" @error="imgerror">
             </div>
+            <div style="text-overflow:ellipsis;">
+                <input v-model="code" placeholder="请输入验证码" @keyup.enter="submit"/>
+                <button @click="submit" class="button button-primary button-rounded button-small">提交</button>
+            </div>
+        </div>
+        <div class="ver" v-else>
+            <div class="alert alert-warning">
+                <strong>警告! </strong><span>{{ error_msg }}</span>
+            </div>
+            <a href="/qa/view/list" class="button button-3d button-rounded">查看所有验证码</a>
+        </div>
     </div>
 </div>
 </body>
-<script src="/qa/static/vue/vue.min.js"></script>
-<script src="/qa/static/axios/axios.min.js"></script>
+<script src="https://cdn.bootcss.com/vue/2.5.13/vue.min.js"></script>
+<script src="https://cdn.bootcss.com/axios/0.18.0/axios.min.js"></script>
 <script>
-    var v = new Vue({
-        el: "#app",
-        data: {
-            id: "",
-            img_url: "",
-            code: "",
-            alt: null,
-            ok: true
-        },
-        methods: {
-            submit: function () {
-                axios.post('/qa/api/answer/' + this.id, {
-                    "Ver": 1,
-                    "Data": {
-                        "Answer": this.code
-                    }
-                }).then(function (value) {
-                    location.href = '/qa/view/list';
-                })
-            },
-            imgerror: function () {
-                this.ok = false
-            }
-        },
-        created: function () {
-            const pattern = "/qa/view/answer/";
-            var path = window.location.pathname;
-            var n = path.indexOf(path, pattern);
-            this.id = path.slice(n+pattern.length);
-            this.img_url = "/qa/api/question/" + this.id;
-        }
-    })
+    var v=new Vue({el:"#app",data:{id:"",img_url:"",code:"",alt:null,ok:true,error_msg:null,error_img:false},methods:{submit:function(){v=this;axios.post('/qa/api/answer/'+this.id,{"Ver":1,"Data":{"Answer":this.code}}).then(function(a){location.href='/qa/view/list'}).catch(function(a){v.error_msg="提交验证码失败"})},imgerror:function(){v=this;v.ok=false;axios.get(v.img_url).then(function(a){try{if(a.data['Code']===4){v.error_msg="验证码已被输入"}}catch(e){if(a.data.indexOf("404")>0){v.error_msg="错误的验证码id"}else{v.error_msg="未知的错误"}}}).catch(function(a){v.error_msg="网络错误"})},error_close:function(){this.error_msg=null}},created:function(){const pattern="/qa/view/answer/";var a=window.location.pathname;var n=a.indexOf(a,pattern);this.id=a.slice(n+pattern.length);this.img_url="/qa/api/question/"+this.id}});
 </script>
 </html>
