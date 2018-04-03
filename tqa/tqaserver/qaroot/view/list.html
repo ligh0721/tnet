@@ -33,6 +33,6 @@
 <script src="/qa/static/axios/axios.min.js"></script>
 <script src="/qa/static/moment.js/moment.min.js"></script>
 <script>
-    var v=new Vue({el:"#app",data:{list:[],str:"未输入的验证码列表",ok:true},methods:{dateFormat:function(row,column){var date=row[column.property]*1000;if(date==undefined){return""}return moment(date).format("YYYY-MM-DD HH:mm:ss")}},created:function(){v=this;axios.get("/qa/api/list").then(function(res){if(res.data['Code']===0){v.list=res.data['Data']['List'];v.str="未输入的验证码列表";v.ok=true;console.log(this.list)}else{v.str="获取列表时发生错误，请刷新以重试";v.ok=false}})}})
+    var v=new Vue({el:"#app",data:{list:[],str:"未输入的验证码列表",interval:null},methods:{dateFormat:function(row,column){var date=row[column.property]*1000;if(date==undefined){return""}return moment(date).format("YYYY-MM-DD HH:mm:ss")},getList:function(){v=this;axios.get("/qa/api/list").then(function(res){if(res.data["Code"]===0){v.list=res.data["Data"]["List"];console.log(res.data["Data"])}else{console.log("获取列表失败")}})}},created:function(){this.getList();this.interval=setInterval(this.getList,5000)},beforeDestroy:function(){clearInterval(this.interval)}});
 </script>
 </html>
