@@ -14,7 +14,7 @@
         <div style="text-align: center">
             <span>{{ str }}</span>
         </div>
-        <el-table :data="list" style="width: 100%;text-align: left" :default-sort="{prop: 'Id', order: 'ascending'}">
+        <el-table :data="list" style="width: 100%;text-align: left" :default-sort="{prop: 'Id', order: 'descending'}">
             <el-table-column prop="Id" label="ID" sortable></el-table-column>
             <el-table-column prop="Time" label="时间" :formatter="dateFormat" sortable></el-table-column>
             <el-table-column label="状态" sortable  sort-by="Status">
