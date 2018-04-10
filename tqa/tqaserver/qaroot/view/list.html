@@ -3,51 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <link href="/qa/static/element-ui/theme-chalk/index.css" rel="stylesheet">
-    <title>验证码管理</title>
+    <title>验证码管理页面</title>
     <style type="text/css">
-        body {
-            font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-
-        .background {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-        }
-
-        .full-height {
-            background-color: #FFFFFF;
-            background-size: cover;
-            color: #6289ad;
-            font-family: 'Raleway';
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
-        }
-
-        .center {
-            padding-top: 40px;
-            width: 100%;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-        }
-
-        .top-right {
-            position: absolute;
-            right: 10px;
-            top: 18px;
-        }
-
-        .content {
-            width: 85%;
-            margin-left:auto;
-            margin-right:auto;
-            z-index: 100;
-            margin-bottom: 15vh;
-        }
+        body{font-family:"Helvetica Neue",Helvetica,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","微软雅黑",Arial,sans-serif;margin:0;padding:0}.background{position:absolute;width:100%;height:100%}.full-height{background-color:#fff;background-size:cover;color:#6289ad;font-family:'Raleway';height:100vh;margin:0;overflow:hidden}.center{padding-top:40px;width:100%;align-items:center;justify-content:center;text-align:center}.top-right{position:absolute;right:10px;top:18px}.content{width:85%;margin-left:auto;margin-right:auto;z-index:100;margin-bottom:15vh}
     </style>
 </head>
 <body>
@@ -58,8 +16,8 @@
         </div>
         <el-table :data="list" style="width: 100%;text-align: left" :default-sort="{prop: 'Id', order: 'descending'}">
             <el-table-column prop="Id" label="ID" sortable></el-table-column>
-            <el-table-column prop="Time" label="时间" :formatter="dateFormat"></el-table-column>
-            <el-table-column label="状态" sortable sort-by="Status">
+            <el-table-column prop="Time" label="时间" :formatter="dateFormat" sortable></el-table-column>
+            <el-table-column label="状态" sortable  sort-by="Status">
                 <template slot-scope="scope">
                     <a style="margin-left: 10px" :href="'/qa/view/answer/' + scope.row.Id"
                        v-if="scope.row.Status === '0'">待输入</a>
@@ -75,36 +33,6 @@
 <script src="/qa/static/axios/axios.min.js"></script>
 <script src="/qa/static/moment.js/moment.min.js"></script>
 <script>
-    var v = new Vue({
-        el: "#app",
-        data: {
-            list: [],
-            str: "验证码列表",
-            ok: true
-        },
-        methods: {
-            dateFormat: function (row, column) {
-                var date = row[column.property] * 1000;
-                if (date == undefined) {
-                    return "";
-                }
-                return moment(date).format("YYYY-MM-DD HH:mm:ss");
-            }
-        },
-        created: function () {
-            v = this;
-            axios.get("/qa/api/list").then(function (res) {
-                if (res.data['Code'] === 0) {
-                    v.list = res.data['Data']['List'];
-                    v.str = "验证码列表";
-                    v.ok = true;
-                    console.log(this.list)
-                } else {
-                    v.str = "获取列表时发生错误，请刷新以重试";
-                    v.ok = false;
-                }
-            })
-        }
-    })
+    var v=new Vue({el:"#app",data:{list:[],str:"未输入的验证码列表",interval:null},methods:{dateFormat:function(row,column){var date=row[column.property]*1000;if(date==undefined){return""}return moment(date).format("YYYY-MM-DD HH:mm:ss")},getList:function(){v=this;axios.get("/qa/api/list").then(function(res){if(res.data["Code"]===0){v.list=res.data["Data"]["List"];console.log(res.data["Data"])}else{console.log("获取列表失败")}})}},created:function(){this.getList();this.interval=setInterval(this.getList,5000)},beforeDestroy:function(){clearInterval(this.interval)}});
 </script>
 </html>
