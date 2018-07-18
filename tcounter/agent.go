@@ -23,7 +23,7 @@ type CounterAgent struct {
     conn net.PacketConn
     raddr string
     table counter_map
-    tableLock sync.RWMutex
+    tableLock sync.Mutex
     quit chan interface{}
     reqs chan interface{}
 }
@@ -90,26 +90,14 @@ func (self *CounterAgent) parseCommand(data []byte) {
     }
 }
 
-func (self *CounterAgent) getTable() (ret counter_map) {
-    self.tableLock.RLock()
-    defer self.tableLock.RUnlock()
-    return self.table
-}
-
-func (self *CounterAgent) setTable(table counter_map) (oldTable counter_map) {
-    self.tableLock.Lock()
-    defer self.tableLock.Unlock()
-    oldTable = self.table
-    self.table = table
-    return oldTable
-}
-
 func (self *CounterAgent) parseSendValue(payload *bytes.Buffer) {
     decoded := &payload_send_value{}
     binary.Read(payload, binary.BigEndian, &decoded.key)
     binary.Read(payload, binary.BigEndian, &decoded.value)
 
-    table := self.getTable()  // must be in one thread
+    self.tableLock.Lock()
+    defer self.tableLock.Unlock()
+    table := self.table
     mapped, ok := table[decoded.key]
     if !ok {
         //log.Printf("not mapped")
@@ -158,7 +146,10 @@ func (self *CounterAgent) readLoop() {
 }
 
 func (self *CounterAgent) flushTable() {
-    table := self.setTable(make(counter_map))
+    self.tableLock.Lock()
+    table := self.table
+    self.table = make(counter_map)
+    self.tableLock.Unlock()
     reqTable := make(map[uint32]*CounterMapped)
     for k, v := range table {
         valueList := make([]*ValueTick, len(v.valueList))
