@@ -252,6 +252,7 @@ func (self *CounterServer) loadTableMapped(key counter_key, begin int64, end int
     row.Close()
 
     self.tableLock.RLock()
+    defer self.tableLock.RUnlock()
     if v, ok := self.table[key]; ok {
         base := v.valueList[v.saveBegin].time
         mergeBegin := int64(math.Floor(float64(begin - base) / alignment)) + v.saveBegin  // must use floor div
@@ -276,7 +277,6 @@ func (self *CounterServer) loadTableMapped(key counter_key, begin int64, end int
             }
         }
     }
-    self.tableLock.RUnlock()
 
     return ret, nil
 }
