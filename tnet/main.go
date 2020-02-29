@@ -4,7 +4,7 @@ import (
     "log"
     "net"
     "os"
-    "git.tutils.com/tutils/tnet"
+    "tnet"
     "github.com/jamescun/tuntap"
     "errors"
     "bytes"
@@ -12,13 +12,13 @@ import (
     "encoding/binary"
     "time"
     _ "github.com/go-sql-driver/mysql"
-    "git.tutils.com/tutils/tnet/tcenter"
-    "git.tutils.com/tutils/tnet/messager"
-    "git.tutils.com/tutils/tnet/tcounter"
+    "tnet/tcenter"
+    "tnet/messager"
+    "tnet/tcounter"
     "net/http"
     _ "net/http/pprof"
     "math/rand"
-    "git.tutils.com/tutils/tnet/tqa"
+    "tnet/tqa"
 )
 
 

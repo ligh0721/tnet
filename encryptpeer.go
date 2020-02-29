@@ -8,7 +8,7 @@ import (
 	"log"
 	"net"
 	"sync"
-	"git.tutils.com/tutils/tnet/tcounter"
+	"tnet/tcounter"
 )
 
 /* encrypt connection

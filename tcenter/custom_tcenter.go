@@ -2,7 +2,7 @@ package tcenter
 
 import (
     "github.com/golang/protobuf/proto"
-    "git.tutils.com/tutils/tnet"
+    "tnet"
     "encoding/binary"
     "bytes"
     "errors"

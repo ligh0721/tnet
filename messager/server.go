@@ -9,7 +9,7 @@ import (
 	"time"
 	"strconv"
 	"log"
-	"git.tutils.com/tutils/tnet"
+	"tnet"
 )
 
 type MessageServer struct {

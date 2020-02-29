@@ -1,6 +1,6 @@
 package main
 
-import "git.tutils.com/tutils/tnet/tqa"
+import "tnet/tqa"
 
 func main() {
     qas := tqa.NewQaServer()

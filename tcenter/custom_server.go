@@ -4,7 +4,7 @@ import (
     "net"
     "errors"
     "log"
-    "git.tutils.com/tutils/tnet"
+    "tnet"
     "encoding/binary"
     "bytes"
     "fmt"
