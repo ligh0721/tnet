@@ -5,9 +5,9 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"git.tutils.com/tutils/tnet"
 	"log"
 	"net"
-	"git.tutils.com/tutils/tnet"
 )
 
 type CustomTCenterServer struct {

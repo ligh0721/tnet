@@ -3,6 +3,8 @@ package tqa
 import (
 	"encoding/base64"
 	"encoding/json"
+	"git.tutils.com/tutils/tnet"
+	"git.tutils.com/tutils/tnet/encoding/mapstructure"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -10,8 +12,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"git.tutils.com/tutils/tnet"
-	"git.tutils.com/tutils/tnet/encoding/mapstructure"
 )
 
 type HttpReq struct {

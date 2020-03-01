@@ -4,6 +4,12 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
+	"git.tutils.com/tutils/tnet"
+	"git.tutils.com/tutils/tnet/messager"
+	"git.tutils.com/tutils/tnet/tcenter"
+	"git.tutils.com/tutils/tnet/tcounter"
+	"git.tutils.com/tutils/tnet/tqa"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jamescun/tuntap"
 	"log"
@@ -14,11 +20,6 @@ import (
 	"os"
 	"sync"
 	"time"
-	"git.tutils.com/tutils/tnet"
-	"git.tutils.com/tutils/tnet/messager"
-	"git.tutils.com/tutils/tnet/tcenter"
-	"git.tutils.com/tutils/tnet/tcounter"
-	"git.tutils.com/tutils/tnet/tqa"
 )
 
 type UdpExt struct {
@@ -385,6 +386,10 @@ func main() {
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
 	args := os.Args
 	if len(args) < 2 {
+		fmt.Printf("Usage:\n")
+		fmt.Printf("\t%s proxy remotehost:10000 localhost:8080\n", args[0])
+		fmt.Printf("\t%s agent :10000 localhost:3128\n", args[0])
+		fmt.Printf("\t%s tun :10000 tun0 secret -m 1400 -a 192.168.100.2 32 -d 8.8.8.8 -r 0.0.0.0 0 1\n", args[0])
 		return
 	}
 	appType := args[1]

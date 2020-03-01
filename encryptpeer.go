@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"git.tutils.com/tutils/tnet/tcounter"
 	"io"
 	"log"
 	"net"
 	"sync"
-	"git.tutils.com/tutils/tnet/tcounter"
 )
 
 /* encrypt connection

@@ -3,13 +3,13 @@ package messager
 import (
 	"database/sql"
 	"encoding/json"
+	"git.tutils.com/tutils/tnet"
 	_ "github.com/go-sql-driver/mysql"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
-	"git.tutils.com/tutils/tnet"
 )
 
 type MessageServer struct {

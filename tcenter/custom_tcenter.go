@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"github.com/golang/protobuf/proto"
 	"git.tutils.com/tutils/tnet"
+	"github.com/golang/protobuf/proto"
 )
 
 type PbSeri struct {
