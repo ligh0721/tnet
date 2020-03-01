@@ -8,7 +8,7 @@ import (
 	"log"
 	"net"
 	"sync"
-	"tnet/tcounter"
+	"git.tutils.com/tutils/tnet/tcounter"
 )
 
 /* encrypt connection
@@ -31,7 +31,7 @@ const (
 	max_peer_conn_op_chan_size = 10
 	max_close_notify_chan_size = 1024
 
-	tcounter_id_up = 200
+	tcounter_id_up   = 200
 	tcounter_id_down = 201
 )
 
@@ -49,7 +49,7 @@ type EncryptTunPeer struct {
 	connCloseNotifyChan chan uint32
 	wg                  sync.WaitGroup
 	lstn                *net.TCPListener
-	tcou				*tcounter.CounterClient
+	tcou                *tcounter.CounterClient
 }
 
 func NewEncryptConnProxy(peer *net.TCPConn, laddr string) (obj *EncryptTunPeer) {

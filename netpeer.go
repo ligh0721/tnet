@@ -1,11 +1,11 @@
 package tnet
 
 import (
+	"errors"
 	"log"
 	"net"
 	"sync"
 	"time"
-	"errors"
 )
 
 const (
@@ -165,7 +165,7 @@ type TcpClient struct {
 	RetryDelay  time.Duration // >= 0
 	MaxRetry    int           // -1: infine; 0: no retry
 	ReadBufSize int
-	Ext interface{}
+	Ext         interface{}
 
 	// 连接成功后调用，返回值意义如下
 	// ok: 如果为 false 该连接将会关闭
@@ -278,15 +278,15 @@ func (self *TcpClient) Start() (err error) {
 
 const (
 	udp_peer_mode_defualt int = 0
-	udp_peer_mode_server int = 1
-	udp_peer_mode_client int = 2
+	udp_peer_mode_server  int = 1
+	udp_peer_mode_client  int = 2
 )
 
 type UdpPeer struct {
 	Addr        string
 	ReadBufSize int
-	mode		int
-	Ext interface{}
+	mode        int
+	Ext         interface{}
 
 	// Listener 监听成功后调用，如果返回 false 则服务器会退出
 	// func(self *tnet.UdpPeer, conn *net.UDPConn) (ok bool) {}
@@ -396,7 +396,7 @@ func (self *UdpPeer) Start() (err error) {
 				return errors.New("OnListenSuccCallback return false")
 			}
 		}
-	} else if (self.mode == udp_peer_mode_client) {
+	} else if self.mode == udp_peer_mode_client {
 		log.Printf("dial to UDP %s", addr.String())
 		conn, err = net.DialUDP("udp", nil, addr)
 		if err != nil {

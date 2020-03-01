@@ -1,4 +1,4 @@
-module tnet
+module git.tutils.com/tutils/tnet
 
 go 1.13
 

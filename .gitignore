@@ -3,3 +3,4 @@ tnet/tnet/tnet
 *.exe
 *.pyc
 tnet/tnet
+.idea
